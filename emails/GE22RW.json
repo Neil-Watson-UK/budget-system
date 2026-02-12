@@ -1,0 +1,204 @@
+{
+    "articles": {
+        "1": {
+            "type": "single",
+            "mainImage": "",
+            "header": "Professional Audio: The Missing Piece in Workplace Productivity",
+            "headerAlignment": "left",
+            "headerFontWeight": "400",
+            "content": "<p>While businesses invest heavily in computers, software, and office design, one critical element often gets overlooked: professional audio quality. Poor audio doesn't just affect individual calls\u2014it impacts meeting effectiveness, employee stress levels, and overall workplace productivity.<\/p><p><br><\/p><p>Professional headsets deliver measurable improvements in communication clarity, focus, and employee satisfaction. From contact centers handling hundreds of calls daily to hybrid workers managing video conferences across multiple locations, the right audio solution transforms how work gets done.<\/p><p><br><\/p><p><strong>EPOS delivers purpose-built audio solutions for every professional environment. Starting with our latest innovation designed specifically for high-volume calling environments:<\/strong><\/p><p><br><\/p>",
+            "contentAlignment": "left",
+            "buttonText": "",
+            "buttonUrl": "",
+            "backgroundColor": "#ffffff"
+        },
+        "2": {
+            "type": "single",
+            "mainImage": "https:\/\/eposaudioevents.com\/emailtemplates\/uploads\/img_684c023c1d8c5.png",
+            "header": "",
+            "headerAlignment": "left",
+            "headerFontWeight": "400",
+            "content": "<p><strong style=\"color: rgb(0, 163, 153);\">New Launch | IMPACT 100<\/strong><\/p><p><strong>Designed for Contact Centers<\/strong><\/p><p class=\"ql-align-center\"><strong><span class=\"ql-cursor\">\ufeff\ufeff\ufeff\ufeff\ufeff\ufeff\ufeff\ufeff\ufeff\ufeff\ufeff\ufeff\ufeff<\/span><\/strong><\/p><p>Purpose-built for high-volume calling environments where reliability, comfort, and crystal-clear communication are non-negotiable<\/p><p><br><\/p><ul><li><strong>Professional quality and affordable audio for everyone&nbsp;<\/strong><\/li><\/ul><p>Get exceptional value for money with this entry-level headset certified for Microsoft Teams and leading UC platforms.&nbsp;<\/p><p><br><\/p><ul><li><strong>Ultra-light design for all-day comfort&nbsp;<\/strong><\/li><\/ul><p>The lightest headset in its category at only 76 grams, it features a slim, soft silicone headband and leatherette earpads.&nbsp;<\/p><p><br><\/p><ul><li><strong>Smart buttons for effortless call control&nbsp;<\/strong><\/li><\/ul><p>The in-line controller features backlit buttons with distinctive shapes, ensuring effortless call control.&nbsp;<\/p><p><br><\/p><ul><li><strong>Guaranteed durability for daily use&nbsp;<\/strong><\/li><\/ul><p>High-quality materials and robust design make the IMPACT 100 a headset you can rely on, even in the most demanding settings.&nbsp;<\/p><p><br><\/p><ul><li><strong>Convenient USB-C and USB-A connectivity&nbsp;<\/strong><\/li><\/ul><p>Connect easily with any office set-up with the included USB-C and USB-A adapter.&nbsp;<\/p><p><br><\/p>",
+            "contentAlignment": "left",
+            "buttonText": "Learn more",
+            "buttonUrl": "https:\/\/www.eposaudio.com\/products\/impact-100",
+            "backgroundColor": "#ffffff"
+        },
+        "3": {
+            "type": "double",
+            "leftImage": "https:\/\/eposaudioevents.com\/emailtemplates\/uploads\/img_68551b9c1571f.png",
+            "leftHeader": "Ultimate comfort, exceptional audio",
+            "leftHeaderAlignment": "center",
+            "leftHeaderFontWeight": "400",
+            "leftContent": "<p>An all-in-one earbud designed for the professional and personal you. With multi-point connectivity, Microsoft Teams and Made for iPhone certifications you will enjoy seamless communication plus unmatched comfort and exceptional sound all day.<\/p>",
+            "leftContentAlignment": "center",
+            "leftButtonText": "Explore More",
+            "leftButtonUrl": "https:\/\/www.eposaudio.com\/products\/adapt-e1?sku=1001261",
+            "rightImage": "https:\/\/eposaudioevents.com\/emailtemplates\/uploads\/img_68551c7e4bf4d.png",
+            "rightHeader": "Work wherever, whenever",
+            "rightHeaderAlignment": "center",
+            "rightHeaderFontWeight": "400",
+            "rightContent": "<p>The ADAPT 660 USB-C helps hybrid workers focus anywhere. Built on EPOS BrainAdapt\u2122 technology, it reduces listening effort in noisy settings. The adaptive hybrid ANC monitors your surroundings, adjusting the ANC accordingly for optimal concentration.<\/p><p><br><\/p>",
+            "rightContentAlignment": "center",
+            "rightButtonText": "Explore More",
+            "rightButtonUrl": "https:\/\/www.eposaudio.com\/products\/adapt-600?sku=1001373",
+            "leftColumnWidth": 50,
+            "rightColumnWidth": 50,
+            "backgroundColor": "#ffffff"
+        },
+        "4": {
+            "type": "single",
+            "mainImage": "",
+            "header": "",
+            "headerAlignment": "left",
+            "headerFontWeight": "400",
+            "content": "<p><br><\/p><p><strong><span class=\"ql-cursor\">\ufeff\ufeff\ufeff\ufeff\ufeff\ufeff\ufeff\ufeff\ufeff<\/span>Introducing our latest additions to the ADAPT line, specifically designed for modern mobile professionals:<\/strong><\/p>",
+            "contentAlignment": "center",
+            "buttonText": "",
+            "buttonUrl": "",
+            "backgroundColor": "#ffffff"
+        },
+        "5": {
+            "type": "single",
+            "mainImage": "",
+            "header": "Trusted Stamp of Quality",
+            "headerAlignment": "center",
+            "headerFontWeight": "400",
+            "content": "<p>Experience Seamless Meetings with Our Headsets: Certified for Microsoft Teams and Zoom. Designed for superior meeting quality, ensuring every participant, whether in the room or remote, enjoys a hassle-free, high-fidelity audio experience.<\/p><p><br><\/p><p><br><\/p><p><strong>EPOS Audio Solutions for Every Workplace Scenario<\/strong><\/p>",
+            "contentAlignment": "center",
+            "buttonText": "",
+            "buttonUrl": "",
+            "backgroundColor": "#ffffff"
+        },
+        "6": {
+            "type": "double",
+            "leftImage": "",
+            "leftHeader": "Call Center Solutions",
+            "leftHeaderAlignment": "center",
+            "leftHeaderFontWeight": "400",
+            "leftContent": "<p class=\"ql-align-center\">Heavy-duty headsets for all-day calling<\/p><p><br><\/p>",
+            "leftContentAlignment": "center",
+            "leftButtonText": "",
+            "leftButtonUrl": "",
+            "rightImage": "",
+            "rightHeader": "Open Office Solutions",
+            "rightHeaderAlignment": "center",
+            "rightHeaderFontWeight": "400",
+            "rightContent": "<p class=\"ql-align-center\">Focus and noise cancellation for busy offices<\/p><p><br><\/p>",
+            "rightContentAlignment": "center",
+            "rightButtonText": "",
+            "rightButtonUrl": "",
+            "leftColumnWidth": 50,
+            "rightColumnWidth": 50,
+            "backgroundColor": "#eeeff1"
+        },
+        "7": {
+            "type": "double",
+            "leftImage": "",
+            "leftHeader": "Mobile Professional Solutions",
+            "leftHeaderAlignment": "right",
+            "leftHeaderFontWeight": "400",
+            "leftContent": "<p class=\"ql-align-center\">Wireless freedom for on-the-go workers<\/p><p><br><\/p>",
+            "leftContentAlignment": "center",
+            "leftButtonText": "",
+            "leftButtonUrl": "",
+            "rightImage": "",
+            "rightHeader": "Home Office Solutions",
+            "rightHeaderAlignment": "center",
+            "rightHeaderFontWeight": "400",
+            "rightContent": "<p class=\"ql-align-center\">Professional quality for remote work<\/p><p><br><\/p>",
+            "rightContentAlignment": "center",
+            "rightButtonText": "",
+            "rightButtonUrl": "",
+            "leftColumnWidth": 50,
+            "rightColumnWidth": 50,
+            "backgroundColor": "#eeeff1"
+        },
+        "8": {
+            "type": "single",
+            "mainImage": "",
+            "header": "About EPOS",
+            "headerAlignment": "center",
+            "headerFontWeight": "400",
+            "content": "<p>We develop solutions that deliver excellent audio experiences so individuals and teams can reach their goals and perform better.<\/p><p><br><\/p><p>EPOS has been established upon the former successful joint venture between audio specialist Sennheiser and the world-leading hearing technology group Demant. Fully owned by the Demant Group and with headquarters in Copenhagen, Denmark, EPOS builds on more than 115 years\u2019 audio expertise and operates in a global market with offices and partners in more than 60 countries.<\/p>",
+            "contentAlignment": "center",
+            "buttonText": "",
+            "buttonUrl": "",
+            "backgroundColor": "#ffffff"
+        },
+        "9": {
+            "type": "double",
+            "leftImage": "https:\/\/eposaudioevents.com\/emailtemplates\/uploads\/img_6855204b7469b.png",
+            "leftHeader": "",
+            "leftHeaderAlignment": "left",
+            "leftHeaderFontWeight": "400",
+            "leftContent": "<p><br><\/p>",
+            "leftContentAlignment": "left",
+            "leftButtonText": "",
+            "leftButtonUrl": "",
+            "rightImage": "",
+            "rightHeader": "Ready to become a partner?",
+            "rightHeaderAlignment": "left",
+            "rightHeaderFontWeight": "400",
+            "rightContent": "<p>Join our valued distribution network and unlock professional audio opportunities for your customers across every industry segment.<\/p>",
+            "rightContentAlignment": "left",
+            "rightButtonText": "Register today",
+            "rightButtonUrl": "https:\/\/partners.eposaudio.com\/s\/register?language=en_US",
+            "leftColumnWidth": 50,
+            "rightColumnWidth": 50,
+            "backgroundColor": "#ffffff"
+        }
+    },
+    "articleBlocks": [
+        {
+            "position": 1,
+            "type": "single"
+        },
+        {
+            "position": 2,
+            "type": "single"
+        },
+        {
+            "position": 3,
+            "type": "double"
+        },
+        {
+            "position": 4,
+            "type": "single"
+        },
+        {
+            "position": 5,
+            "type": "single"
+        },
+        {
+            "position": 6,
+            "type": "double"
+        },
+        {
+            "position": 7,
+            "type": "double"
+        },
+        {
+            "position": 8,
+            "type": "single"
+        },
+        {
+            "position": 9,
+            "type": "double"
+        }
+    ],
+    "subjectLine": "Professional Audio: The Missing Piece in Workplace Productivity",
+    "preheaderText": "Trusted Stamp of Quality",
+    "backgroundImage": "",
+    "logoUrl": "https:\/\/eposaudioevents.com\/emailtemplates\/uploads\/img_685506ba9c2b8.png",
+    "senderName": "",
+    "senderEmail": "",
+    "senderMobile": "",
+    "personalizationType": "none",
+    "region": "ANZ",
+    "audience": "channel",
+    "emailFrom": "ayiw@eposaudio.com",
+    "sendTime": "2025-07-01T09:55",
+    "createdBy": "Neil",
+    "referenceCode": "GE22RW"
+}

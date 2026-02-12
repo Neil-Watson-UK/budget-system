@@ -1,0 +1,58 @@
+{
+    "articles": {
+        "1": {
+            "type": "single",
+            "mainImage": "https:\/\/eposaudioevents.com\/emailtemplates\/uploads\/img_684c023c1d8c5.png",
+            "header": "Introducing IMPACT 100 - Elevate your conversations",
+            "headerAlignment": "center",
+            "headerFontWeight": "100",
+            "content": "<p>Hi %%FirstName%%,<\/p><p>Professional quality and affordable audio for everyone<\/p><p><br><\/p><p>Get exceptional value for money with this entry-level certified for Microsoft Teams and leading UC platforms.<\/p>",
+            "contentAlignment": "center",
+            "buttonText": "Learn more",
+            "buttonUrl": "https:\/\/www.eposaudio.com\/en\/gb\/products\/impact-100",
+            "backgroundColor": "#ffffff"
+        },
+        "2": {
+            "type": "sign_off",
+            "content": "",
+            "contentAlignment": "left",
+            "backgroundColor": "#ffffff"
+        },
+        "3": {
+            "type": "double",
+            "leftImage": "",
+            "leftHeader": "",
+            "leftHeaderAlignment": "left",
+            "leftHeaderFontWeight": "400",
+            "leftContent": "",
+            "leftContentAlignment": "left",
+            "leftButtonText": "",
+            "leftButtonUrl": "",
+            "rightImage": "",
+            "rightHeader": "",
+            "rightHeaderAlignment": "left",
+            "rightHeaderFontWeight": "400",
+            "rightContent": "",
+            "rightContentAlignment": "left",
+            "rightButtonText": "",
+            "rightButtonUrl": "",
+            "leftColumnWidth": 50,
+            "rightColumnWidth": 50,
+            "backgroundColor": "#ffffff"
+        }
+    },
+    "subjectLine": "IMPACT 100 - Verbessern Sie Ihre Gespr\u00e4che",
+    "preheaderText": "",
+    "backgroundImage": "",
+    "logoUrl": "https:\/\/eposaudioevents.com\/emailtemplates\/uploads\/img_685506ba9c2b8.png",
+    "senderName": "",
+    "senderEmail": "",
+    "senderMobile": "",
+    "personalizationType": "salesforce_marketing_cloud",
+    "region": "DACH",
+    "audience": "channel",
+    "emailFrom": "enterprise@eposaudio.com",
+    "sendTime": "2025-07-02T11:00",
+    "createdBy": "Neil",
+    "referenceCode": "6Z6X8C"
+}

@@ -1,0 +1,35 @@
+{
+    "referenceCode": "LVTAL7",
+    "subjectLine": "",
+    "preheaderText": "",
+    "backgroundImage": "",
+    "logoUrl": "https:\/\/eposaudioevents.com\/emailtemplates\/uploads\/img_683f0affc30f2.png",
+    "senderName": "",
+    "senderEmail": "",
+    "senderMobile": "",
+    "personalizationType": "none",
+    "region": "AMER",
+    "audience": "",
+    "emailFrom": "",
+    "sendTime": "",
+    "articleBlocks": [
+        {
+            "position": 1,
+            "type": "single"
+        }
+    ],
+    "articles": {
+        "1": {
+            "type": "single",
+            "mainImage": "https:\/\/eposaudioevents.com\/emailtemplates\/uploads\/img_6842c9462733a0.60653336.jpg",
+            "header": "Ultimate comfort, exceptional audio",
+            "headerAlignment": "center",
+            "headerFontWeight": "400",
+            "content": "<p><br><\/p>",
+            "contentAlignment": "left",
+            "buttonText": "",
+            "buttonUrl": ""
+        }
+    },
+    "createdBy": "neil_watson"
+}

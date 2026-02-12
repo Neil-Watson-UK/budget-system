@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Melody Canvas</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tone.js for sound generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <!-- Firebase for the leaderboard -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, addDoc, onSnapshot, collection, query, orderBy, limit, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // Expose Firebase objects to the global scope for use in the main script
+        window.firebase = {
+            initializeApp,
+            getAuth,
+            signInAnonymously,
+            signInWithCustomToken,
+            onAuthStateChanged,
+            getFirestore,
+            doc,
+            addDoc,
+            setDoc,
+            onSnapshot,
+            collection,
+            query,
+            orderBy,
+            limit
+        };
+        // Set log level to debug for development
+        setLogLevel('Debug');
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c; /* Tailwind's gray-900 equivalent */
+            color: #e2e8f0; /* Tailwind's gray-200 equivalent */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 1rem;
+        }
+
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+            padding: 2.5rem;
+            border-radius: 1.5rem;
+            background-color: #2d3748; /* Tailwind's gray-800 equivalent */
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 800px;
+            text-align: center;
+        }
+
+        #canvas-container {
+            position: relative;
+            width: 100%;
+            max-width: 700px;
+            aspect-ratio: 16 / 9;
+            background-color: #4a5568; /* Tailwind's gray-600 equivalent */
+            border-radius: 1rem;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        #melodyCanvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        #play-head {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 2px;
+            height: 100%;
+            background-color: #facc15;
+            box-shadow: 0 0 10px #facc15;
+            z-index: 10;
+            display: none;
+            transition: transform linear;
+            pointer-events: none;
+        }
+
+        .canvas-zones {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            pointer-events: none;
+            z-index: 5;
+            opacity: 0.2;
+        }
+
+        .canvas-zone {
+            height: 33.33%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px #000;
+        }
+
+        #bird-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 15;
+        }
+
+        .bird {
+            position: absolute;
+            font-size: 3rem;
+            left: 50%;
+            transform: translateX(-50%);
+            transition: top 0.5s ease-out;
+        }
+
+        .message-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #2d3748;
+            padding: 2.5rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            z-index: 100;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200">
+    <div class="game-container">
+        <h1 class="text-4xl md:text-5xl font-bold text-blue-400 mb-2">Melody Canvas</h1>
+        <p class="text-md md:text-lg text-gray-400">
+            Draw a melody and make beautiful music to get a high score!
+        </p>
+
+        <div class="flex flex-col md:flex-row justify-between w-full mb-4">
+            <div class="flex flex-col items-start">
+                <span class="text-gray-400">Melodic Score:</span>
+                <span id="score" class="text-2xl font-bold text-blue-300">0</span>
+            </div>
+            <div class="flex flex-col items-start md:items-end">
+                <span class="text-gray-400">Melodic Streak:</span>
+                <span id="streak" class="text-2xl font-bold text-blue-300">0</span>
+            </div>
+        </div>
+
+        <div id="canvas-container">
+            <div id="bird-container">
+                <div id="your-bird" class="bird">🐦</div>
+                <div id="high-score-bird" class="bird hidden">🏆</div>
+            </div>
+            <div class="canvas-zones">
+                <div class="canvas-zone text-red-400">HIGH TONE</div>
+                <div class="canvas-zone text-green-400">MID TONE</div>
+                <div class="canvas-zone text-yellow-400">LOW TONE</div>
+            </div>
+            <canvas id="melodyCanvas"></canvas>
+            <div id="play-head"></div>
+        </div>
+
+        <div class="flex flex-wrap justify-center gap-4 mt-4">
+            <button id="start-button" class="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-full transition-transform transform hover:scale-105">
+                Start Drawing
+            </button>
+            <button id="play-button" class="px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-bold rounded-full transition-transform transform hover:scale-105" disabled>
+                Play & Submit
+            </button>
+            <button id="reset-button" class="px-6 py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-full transition-transform transform hover:scale-105" disabled>
+                Reset
+            </button>
+        </div>
+
+        <div id="leaderboard" class="w-full mt-8 p-4 bg-gray-700 rounded-lg hidden">
+            <h2 class="text-3xl font-bold mb-4 text-center">Top Melodic Scores</h2>
+            <div id="leaderboard-list"></div>
+        </div>
+        
+        <!-- Message Box -->
+        <div id="message-box" class="message-box hidden">
+            <h3 id="message-heading" class="text-2xl font-bold text-white mb-2"></h3>
+            <p id="message-text" class="text-gray-300 mb-6"></p>
+            <button id="message-button" class="px-8 py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-full transition-transform transform hover:scale-105">
+                OK
+            </button>
+        </div>
+    </div>
+
+    <script type="module">
+        window.onload = function() {
+            // === UI Elements ===
+            const canvas = document.getElementById('melodyCanvas');
+            const ctx = canvas.getContext('2d');
+            const playHead = document.getElementById('play-head');
+            const startButton = document.getElementById('start-button');
+            const playButton = document.getElementById('play-button');
+            const resetButton = document.getElementById('reset-button');
+            const messageBox = document.getElementById('message-box');
+            const messageHeading = document.getElementById('message-heading');
+            const messageText = document.getElementById('message-text');
+            const messageButton = document.getElementById('message-button');
+            const scoreDisplay = document.getElementById('score');
+            const streakDisplay = document.getElementById('streak');
+            const leaderboardContainer = document.getElementById('leaderboard');
+            const leaderboardList = document.getElementById('leaderboard-list');
+            const yourBird = document.getElementById('your-bird');
+            const highScoreBird = document.getElementById('high-score-bird');
+
+            // --- Firestore Initialization and Authentication ---
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+            const { initializeApp, getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, doc, setDoc } = window.firebase;
+
+            let db, auth, userId;
+            let isAuthReady = false;
+
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        isAuthReady = true;
+                        fetchLeaderboard();
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                });
+            } catch (e) {
+                console.error("Firebase initialization failed:", e);
+                isAuthReady = true;
+                showMessage("Firebase Error", "Failed to connect to the database. Leaderboard features will be unavailable.", "OK");
+            }
+            
+            // Function to show a custom message box
+            function showMessage(heading, text, buttonText, onButtonClick) {
+                messageHeading.innerText = heading;
+                messageText.innerHTML = text;
+                messageButton.innerText = buttonText;
+                messageButton.onclick = () => {
+                    messageBox.style.display = 'none';
+                    if (onButtonClick) onButtonClick();
+                };
+                messageBox.style.display = 'flex';
+            }
+
+            // === Game State Variables ===
+            let isDrawing = false;
+            let path = [];
+            let playheadInterval = null;
+            let melodicScore = 0;
+            let melodicStreak = 0;
+            let isPlayingBack = false;
+            let lastNotePlayed = null;
+            let yourHighScore = 0;
+
+            // === Tone.js Audio Setup ===
+            const highSynth = new Tone.Synth({
+                oscillator: { type: "sine" },
+                envelope: { attack: 0.05, decay: 0.1, sustain: 0.1, release: 0.5 }
+            }).toDestination();
+            const midSynth = new Tone.Synth({
+                oscillator: { type: "square" },
+                envelope: { attack: 0.05, decay: 0.1, sustain: 0.1, release: 0.5 }
+            }).toDestination();
+            const lowSynth = new Tone.Synth({
+                oscillator: { type: "triangle" },
+                envelope: { attack: 0.05, decay: 0.1, sustain: 0.1, release: 0.5 }
+            }).toDestination();
+
+            // Pitch sets for each zone
+            const highPitches = ["C5", "D5", "E5", "G5", "A5", "C6"];
+            const midPitches = ["C4", "D4", "E4", "G4", "A4", "C5"];
+            const lowPitches = ["C3", "D3", "E3", "G3", "A3", "C4"];
+            
+            // "Beautiful" Intervals in semitones: Perfect 5th (7), Perfect 4th (5), Major 3rd (4), Minor 3rd (3), Octave (12)
+            const beautifulIntervals = new Set([3, 4, 5, 7, 12]);
+            const noteToSemitone = {
+                "C3": 0, "D3": 2, "E3": 4, "G3": 7, "A3": 9,
+                "C4": 12, "D4": 14, "E4": 16, "G4": 19, "A4": 21,
+                "C5": 24, "D5": 26, "E5": 28, "G5": 31, "A5": 33,
+                "C6": 36
+            };
+            const playbackSpeed = 500; // pixels per second
+            const noteSpacing = 20; // pixels per note
+
+            // === Drawing Functions ===
+            function startDrawing(e) {
+                if (isPlayingBack) return;
+                isDrawing = true;
+                path = [];
+                melodicScore = 0;
+                melodicStreak = 0;
+                lastNotePlayed = null;
+                updateUI();
+                
+                startButton.disabled = true;
+                playButton.disabled = false;
+                resetButton.disabled = false;
+
+                recordPoint(e);
+            }
+
+            function stopDrawing() {
+                isDrawing = false;
+            }
+
+            function recordPoint(e) {
+                if (!isDrawing) return;
+                const rect = canvas.getBoundingClientRect();
+                const x = (e.clientX || e.touches[0].clientX) - rect.left;
+                const y = (e.clientY || e.touches[0].clientY) - rect.top;
+                path.push({ x, y });
+                drawPath();
+            }
+
+            function drawPath() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                if (path.length < 2) return;
+                ctx.beginPath();
+                ctx.moveTo(path[0].x, path[0].y);
+                for (let i = 1; i < path.length; i++) {
+                    ctx.lineTo(path[i].x, path[i].y);
+                }
+                ctx.strokeStyle = '#3b82f6'; /* Tailwind blue-500 */
+                ctx.lineWidth = 4;
+                ctx.lineCap = 'round';
+                ctx.stroke();
+            }
+
+            // === Game Logic ===
+            function getNoteFromY(y) {
+                const zoneHeight = canvas.height / 3;
+                let synth, pitches;
+
+                if (y < zoneHeight) {
+                    synth = highSynth;
+                    pitches = highPitches;
+                } else if (y < zoneHeight * 2) {
+                    synth = midSynth;
+                    pitches = midPitches;
+                } else {
+                    synth = lowSynth;
+                    pitches = lowPitches;
+                }
+                
+                const normalizedYInZone = (y % zoneHeight) / zoneHeight;
+                const noteIndex = Math.floor(normalizedYInZone * pitches.length);
+                const note = pitches[noteIndex];
+                return { synth, note };
+            }
+
+            async function playGame() {
+                if (path.length < 2) {
+                    showMessage("Nothing to Play", "Please draw a melody with at least two points first.", "OK");
+                    return;
+                }
+                // Fix: Start the AudioContext only after a user gesture.
+                if (Tone.context.state !== 'running') {
+                    await Tone.start();
+                }
+
+                playButton.disabled = true;
+                startButton.disabled = true;
+                resetButton.disabled = true;
+                
+                isPlayingBack = true;
+                playHead.style.display = 'block';
+                playHead.style.transform = `translateX(0px)`;
+                yourBird.style.left = '50%';
+                
+                const melody = [];
+                let lastX = -1;
+                path.forEach(point => {
+                    if (point.x - lastX > noteSpacing) {
+                        const { synth, note } = getNoteFromY(point.y);
+                        melody.push({
+                            time: (point.x / playbackSpeed),
+                            note: note,
+                            synth: synth
+                        });
+                        lastX = point.x;
+                    }
+                });
+
+                // Schedule all the notes and score updates
+                melody.forEach((noteEvent, index) => {
+                    Tone.Transport.scheduleOnce(t => {
+                        noteEvent.synth.triggerAttackRelease(noteEvent.note, "8n", t);
+                        
+                        // Scoring and bird animation
+                        if (index > 0) {
+                            const prevNote = melody[index - 1].note;
+                            const currentNote = noteEvent.note;
+                            const interval = Math.abs(noteToSemitone[currentNote] - noteToSemitone[prevNote]);
+                            
+                            const pointScore = 10;
+                            if (beautifulIntervals.has(interval)) {
+                                melodicStreak++;
+                                melodicScore += pointScore * melodicStreak;
+                            } else {
+                                melodicStreak = 0;
+                            }
+                            updateUI();
+                        }
+                        
+                        // Animate your bird
+                        const birdY = (canvas.height - (noteToSemitone[noteEvent.note] * 5 + 50)) / canvas.height * 100;
+                        yourBird.style.top = `${birdY}%`;
+                    }, noteEvent.time);
+                });
+
+                const totalDuration = (path[path.length - 1].x / playbackSpeed) + 1; // Add a buffer
+                Tone.Transport.scheduleOnce(() => {
+                    stopPlayback();
+                    endGame();
+                }, totalDuration);
+
+                Tone.Transport.start();
+                
+                playheadInterval = setInterval(() => {
+                    const playheadX = Tone.Transport.seconds * playbackSpeed;
+                    if (playheadX <= canvas.width) {
+                        playHead.style.transform = `translateX(${playheadX}px)`;
+                    }
+                }, 10);
+            }
+
+            function stopPlayback() {
+                if (Tone.Transport.state !== 'stopped') {
+                    Tone.Transport.stop();
+                    Tone.Transport.cancel();
+                }
+                if (playheadInterval) {
+                    clearInterval(playheadInterval);
+                }
+                highSynth.triggerRelease();
+                midSynth.triggerRelease();
+                lowSynth.triggerRelease();
+                playHead.style.display = 'none';
+                isPlayingBack = false;
+            }
+
+            async function endGame() {
+                // Save and fetch scores
+                if (isAuthReady) {
+                    await saveScore(melodicScore);
+                    fetchLeaderboard();
+                }
+
+                showMessage(
+                    "Game Over!",
+                    `Your final score is: <span class="text-blue-300 font-bold">${melodicScore}</span>. <br> You reached a streak of: <span class="text-blue-300 font-bold">${melodicStreak}</span>.`,
+                    "View Leaderboard",
+                    () => {
+                        leaderboardContainer.style.display = 'block';
+                        resetButtonStates();
+                    }
+                );
+            }
+            
+            function resetButtonStates() {
+                startButton.disabled = false;
+                playButton.disabled = true;
+                resetButton.disabled = true;
+                yourBird.style.top = '100%';
+            }
+
+            function resetGame() {
+                stopPlayback();
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                path = [];
+                melodicScore = 0;
+                melodicStreak = 0;
+                updateUI();
+                resetButtonStates();
+            }
+            
+            function updateUI() {
+                scoreDisplay.textContent = melodicScore;
+                streakDisplay.textContent = melodicStreak;
+            }
+            
+            // --- Firestore Functions ---
+            async function saveScore(finalScore) {
+                if (!isAuthReady) {
+                    console.error("Authentication not ready. Cannot save score.");
+                    return;
+                }
+                try {
+                    const userDocRef = doc(db, `artifacts/${appId}/users/${userId}/scores/melody_canvas`);
+                    await setDoc(userDocRef, {
+                        score: finalScore,
+                        timestamp: new Date()
+                    }, { merge: true });
+                    console.log("Score saved successfully!");
+                } catch (e) {
+                    console.error("Error saving score:", e);
+                }
+            }
+            
+            async function fetchLeaderboard() {
+                if (!isAuthReady) {
+                    console.error("Authentication not ready. Cannot fetch leaderboard.");
+                    return;
+                }
+                try {
+                    const scoresColRef = collection(db, `artifacts/${appId}/users/${userId}/scores`);
+                    const q = query(scoresColRef, orderBy("score", "desc"), limit(10));
+                    onSnapshot(q, (querySnapshot) => {
+                        leaderboardList.innerHTML = '';
+                        let position = 1;
+                        let firstDoc = true;
+                        querySnapshot.forEach((doc) => {
+                            const data = doc.data();
+                            if (firstDoc) {
+                                yourHighScore = data.score;
+                                const birdY = (canvas.height - (yourHighScore * 1.5)) / canvas.height * 100;
+                                highScoreBird.style.top = `${birdY}%`;
+                                highScoreBird.style.display = 'block';
+                                firstDoc = false;
+                            }
+                            const scoreItem = document.createElement('div');
+                            scoreItem.className = 'flex justify-between items-center p-2 rounded-md mb-2 bg-gray-600';
+                            scoreItem.innerHTML = `
+                                <span class="text-lg">${position}. You</span>
+                                <span class="text-xl font-bold">${data.score}</span>
+                            `;
+                            leaderboardList.appendChild(scoreItem);
+                            position++;
+                        });
+                        if (querySnapshot.empty) {
+                            leaderboardList.innerHTML = '<p class="text-center text-gray-400">No scores yet!</p>';
+                        }
+                    }, (error) => {
+                        console.error("Error fetching leaderboard:", error);
+                    });
+                } catch (e) {
+                    console.error("Error setting up leaderboard listener:", e);
+                }
+            }
+
+            // === Event Listeners and Initial Setup ===
+            function handleResize() {
+                canvas.width = canvas.parentElement.clientWidth;
+                canvas.height = canvas.parentElement.clientHeight;
+                if (path.length > 0) {
+                    drawPath();
+                }
+            }
+
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseleave', stopDrawing);
+            canvas.addEventListener('mousemove', recordPoint);
+            
+            canvas.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                startDrawing(e);
+            }, { passive: false });
+            canvas.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                stopDrawing();
+            }, { passive: false });
+            canvas.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                recordPoint(e);
+            }, { passive: false });
+
+            startButton.addEventListener('click', () => {
+                resetGame();
+                showMessage("Start Drawing", "Use your mouse or finger to draw a melody. Try to make it sound beautiful!", "Got it!");
+            });
+
+            playButton.addEventListener('click', playGame);
+            resetButton.addEventListener('click', resetGame);
+            
+            window.addEventListener('resize', handleResize);
+            
+            handleResize();
+            showMessage(
+                "Melody Canvas",
+                "Draw a line on the canvas. The higher or lower you draw, the higher or lower the pitch. Try to make beautiful melodies!",
+                "Let's go!",
+                () => {}
+            );
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,60 @@
+{
+    "referenceCode": "RYLAC6",
+    "subjectLine": "",
+    "preheaderText": "",
+    "backgroundImage": "",
+    "logoUrl": "https:\/\/eposaudioevents.com\/emailtemplates\/uploads\/img_683f0affc30f2.png",
+    "senderName": "",
+    "senderEmail": "",
+    "senderMobile": "",
+    "personalizationType": "none",
+    "region": "AMER",
+    "audience": "channel",
+    "emailFrom": "",
+    "sendTime": "",
+    "articleBlocks": [
+        {
+            "position": 1,
+            "type": "double"
+        },
+        {
+            "position": 2,
+            "type": "single"
+        }
+    ],
+    "articles": {
+        "1": {
+            "type": "double",
+            "leftImage": "https:\/\/eposaudioevents.com\/emailtemplates\/uploads\/img_6843137fdbfac.png",
+            "leftHeader": "(1) Buy 20+ qualifying IMPACT Headsets",
+            "leftHeaderAlignment": "center",
+            "leftHeaderFontWeight": "100",
+            "leftContent": "<p>1001138 IMPACT 1060T<\/p><p>1001173 IMPACT 1061T<\/p><p>1001171 IMPACT 1061T ANC<\/p><p>1001179 IMPACT 860T<\/p><p>1001177 IMPACT 860T ANC<\/p><p>1001212 IMPACT 730T<\/p><p>1001214 IMPACT 760T<\/p><p>1001253 IMPACT 460T<\/p><p><br><\/p><p>20 unit min per sku to qualify<\/p>",
+            "leftContentAlignment": "center",
+            "leftButtonText": "",
+            "leftButtonUrl": "",
+            "rightImage": "https:\/\/eposaudioevents.com\/emailtemplates\/uploads\/img_68431397e18b6.png",
+            "rightHeader": "(2) Get a Bonus Conferencing Package",
+            "rightHeaderAlignment": "center",
+            "rightHeaderFontWeight": "100",
+            "rightContent": "<p>1001197 EXPAND Vision 1M<\/p><p>1000895 EXPAND Capture 5<\/p><p><br><\/p><p>whilst stocks last<\/p>",
+            "rightContentAlignment": "center",
+            "rightButtonText": "",
+            "rightButtonUrl": "",
+            "leftColumnWidth": 50,
+            "rightColumnWidth": 50
+        },
+        "2": {
+            "type": "single",
+            "mainImage": "https:\/\/eposaudioevents.com\/emailtemplates\/uploads\/img_684313540bab4.png",
+            "header": "Meeting Spaces Bonus Package",
+            "headerAlignment": "center",
+            "headerFontWeight": "400",
+            "content": "<p class=\"ql-align-center\"><strong>Get a Free Conferencing Pack for Microsoft Teams<\/strong>(1) (worth \u20ac1k+) with every 20 qualifying(2) EPOS headsets purchased!<\/p><p class=\"ql-align-center\"><br><\/p><p class=\"ql-align-center\">On qualifying purchases made between 01.07.2025 and 30.09.2025<\/p>",
+            "contentAlignment": "center",
+            "buttonText": "learn more",
+            "buttonUrl": "https:\/\/senncom.my.salesforce.com\/sfc\/p\/1t000000Fsd4\/a\/QD000005dPdB\/fBOhihvn8BvhplnuEnbVUz5alR0BYoSog39ON5rDmKY"
+        }
+    },
+    "createdBy": "Neil"
+}

@@ -1,0 +1,808 @@
+body {
+    font-family: 'EPOS Basis', Arial, sans-serif; /* Moved from inline style */
+    margin: 0; /* Remove default body margin */
+    padding: 0; /* Remove default body padding */
+    padding-top: 80px; /* Space for the fixed navigation bar */
+    background-image: url('emailposback.svg'); /* Ensure this path is correct */
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-position: center center;
+    background-color: #f5f5f5;
+    min-height: 100vh; /* Ensure full height for background */
+    box-sizing: border-box; /* Include padding in height calculation */
+    color: #333; /* Default text color */
+}
+
+/* Styles for the fixed navigation bar */
+.main-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    background-color: #3f1e31; /* Specified background color */
+    color: white; /* Specified text color */
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    /* Lozenge effect: square top, rounded bottom */
+    border-bottom-left-radius: 15px;
+    border-bottom-right-radius: 15px;
+    width: 100%; /* Ensure it spans full width */
+    z-index: 1000; /* Ensure it stays on top */
+    box-sizing: border-box; /* Include padding in width */
+}
+
+.nav-logo {
+    height: 40px; /* Adjust as needed */
+    margin-right: 10px;
+}
+
+.nav-title {
+    font-size: 1.5em;
+    font-weight: bold;
+    flex-grow: 1; /* Allows title to take available space */
+}
+
+.nav-links a {
+    color: white;
+    text-decoration: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+.nav-links a:hover {
+    background-color: #5a3e4d; /* Slightly lighter shade for hover */
+}
+
+/* Main content area padding for fixed nav */
+#main-app-content {
+    padding-top: 80px; /* Same as nav height to prevent content from going under the nav */
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center children horizontally */
+    justify-content: flex-start;
+    min-height: calc(100vh - 80px); /* Adjust min-height for remaining viewport */
+    box-sizing: border-box;
+    padding-bottom: 20px; /* Add some padding at the bottom */
+}
+
+/* Step 1 Section - Centered and max-width 1440px */
+#step1-section {
+    max-width: 1440px; /* Updated from 1200px to 1440px */
+    width: 100%; /* Ensure it takes full available width up to max-width */
+    margin: 20px auto 0 auto; /* Center it horizontally and add top margin */
+    box-sizing: border-box; /* Include padding in width */
+}
+
+/* Form Container Styling */
+.form-container {
+    background-color: rgba(255, 255, 255, 0.9); /* Slightly transparent white */
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    width: 100%;
+    max-width: 1920px; /* Updated from 1440px to 1920px */
+    box-sizing: border-box; /* Include padding in width */
+    margin-left: auto; /* Center the form-container within its parent */
+    margin-right: auto; /* Center the form-container within its parent */
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #00242a;
+}
+
+.form-group input[type="text"],
+.form-group input[type="email"],
+.form-group input[type="datetime-local"],
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    box-sizing: border-box; /* Include padding in width */
+    font-family: 'EPOS Basis', Arial, sans-serif;
+    font-size: 1em;
+    color: #333;
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+/* Buttons */
+button {
+    background-color: #00242a;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    margin-right: 10px; /* Spacing between buttons */
+    margin-bottom: 10px; /* For buttons in rows */
+}
+
+button:hover {
+    background-color: #00353D;
+    transform: translateY(-2px);
+}
+
+button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Specific button styles */
+.action-button {
+    background-color: #00a399; /* Greenish */
+}
+
+.action-button:hover {
+    background-color: #007a73;
+}
+
+.remove-button {
+    background-color: #d9534f; /* Red */
+}
+
+.remove-button:hover {
+    background-color: #c9302c;
+}
+
+.format-button {
+    background-color: #5cb85c; /* Green for formatting */
+}
+
+.format-button:hover {
+    background-color: #4cae4c;
+}
+
+.glow-button {
+    background-color: #00a399;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 15px 30px;
+    font-size: 1.2em;
+    font-weight: bold;
+    text-transform: uppercase;
+    box-shadow: 0 0 10px rgba(0, 163, 153, 0.5), 0 0 20px rgba(0, 163, 153, 0.3), 0 0 30px rgba(0, 163, 153, 0.2);
+    transition: all 0.3s ease;
+    margin-top: 20px;
+}
+
+.glow-button:hover {
+    background-color: #007a73;
+    box-shadow: 0 0 15px rgba(0, 163, 153, 0.7), 0 0 25px rgba(0, 163, 153, 0.5), 0 0 35px rgba(0, 163, 153, 0.3);
+    transform: scale(1.02);
+}
+
+.translate-button, .select-image-button {
+    background-color: #00242a;
+    color: white;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+    white-space: nowrap; /* Prevent text wrapping */
+    margin-left: 5px; /* Add some space from the input */
+    transition: background-color 0.3s ease;
+    flex-shrink: 0; /* Prevent it from shrinking */
+}
+
+.translate-button:hover, .select-image-button:hover {
+    background-color: #00353D;
+}
+
+/* Quill Editor Styling */
+.quill-editor-container {
+    height: 150px; /* Fixed height for editors */
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #fff;
+}
+
+.ql-toolbar {
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+.ql-container {
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+}
+
+.ql-editor {
+    font-family: 'EPOS Basis', Arial, sans-serif; /* Apply font to editor content */
+    font-size: 1em;
+    line-height: 1.5;
+    min-height: 120px; /* Ensure editor content area is visible */
+}
+
+/* Article Block Styling */
+.article-block {
+    background-color: #f9f9f9;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    position: relative; /* Needed for absolute positioning of move/remove buttons */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.article-block.selected {
+    border: 2px solid #00a399;
+    box-shadow: 0 0 15px rgba(0, 163, 153, 0.3);
+    transform: translateY(-3px);
+}
+
+.article-block h4 {
+    color: #00242a;
+    margin-top: 0;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+    font-size: 1.2em;
+}
+
+/* Preview Container Styling */
+.main-container {
+    display: flex;
+    /* Removed sticky positioning to prevent overlap */
+    /* position: -webkit-sticky; */
+    /* position: sticky; */
+    /* top: 0; */
+    flex-direction: row; /* Default to row layout */
+    gap: 20px;
+    padding: 20px;
+    width: 100%;
+    max-width: 2400px; /* Updated from 1200px to 2400px */
+    box-sizing: border-box;
+    margin: 0 auto; /* Center the main container within main-app-content */
+}
+
+.preview-container {
+    flex: 1; /* Allow preview to take available space */
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    display: flex;
+    /* Removed sticky positioning to prevent overlap */
+    /* position: -webkit-sticky; */
+    /* position: sticky; */
+    /* top: 0; */
+    flex-direction: column;
+    align-items: center; /* Center iframe */
+    min-width: 700px; /* Added min-width from your provided CSS */
+}
+
+.preview-container h3 {
+    color: #00242a;
+    margin-top: 0;
+    margin-bottom: 15px;
+}
+
+#live-preview-iframe {
+    width: 100%; /* Default to full width of its container */
+    max-width: 720px; /* Desktop default view */
+    height: 600px; /* Fixed height for iframe */
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #fff;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    margin: 0 auto; /* Center iframe */
+    transition: width 0.3s ease-in-out, max-width 0.3s ease-in-out, border-radius 0.3s ease, border 0.3s ease;
+}
+
+.preview-controls {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 15px;
+}
+
+.preview-controls .btn {
+    padding: 8px 15px;
+    background-color: #f0f0f0;
+    color: #333;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.preview-controls .btn:hover {
+    background-color: #e0e0e0;
+}
+
+
+/* Generated HTML Code Section */
+.code-container {
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    margin-top: 40px; /* Increased margin to push it below the main-container */
+    width: 100%;
+    max-width: 1200px; /* Match main container width */
+    box-sizing: border-box;
+    margin-left: auto; /* Center the code-container within its parent */
+    margin-right: auto; /* Center the code-container within its parent */
+}
+
+.code-container textarea {
+    width: 100%;
+    height: 400px;
+    background-color: #f0f0f0;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 15px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 0.9em;
+    line-height: 1.4;
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+/*
+ * Updated Modal Styles for EmailPOS
+ * These styles ensure modals appear correctly on top of other content
+ */
+
+/* Styles for the modal backdrop (to dim the background) */
+#modalBackdrop { /* Changed from .modal-backdrop to #modalBackdrop */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7); /* Semi-transparent black */
+    z-index: 9999; /* Increased z-index */
+    display: none; /* Hidden by default */
+}
+
+.app-modal { /* New class to apply common modal positioning */
+    position: fixed; /* Crucial for z-index to work */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* Centers the modal */
+    background-color: #fff; /* Default background for the modal container */
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    width: 95%;      /* Make it take up 95% of the width */
+    height: 95%;     /* Make it take up 95% of the height */
+    max-width: 1800px; /* Cap the max width for very large screens */
+    max-height: 1000px; /* Cap the max height for very large screens */
+    overflow-y: auto;
+    z-index: 10000; /* Increased z-index */
+    display: none; /* Hidden by default */
+}
+
+/* Styles for the inner content of the modal, already present in your original CSS */
+.modal-content {
+    background-color: #fefefe;
+    margin: auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 90%;
+    max-width: 1680px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-content h2, .modal-content h3 {
+    color: #00242a;
+    margin-top: 0;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.modal-content .close-button {
+    color: #aaa;
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.modal-content .close-button:hover,
+.modal-content .close-button:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.modal-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.modal-buttons button {
+    padding: 10px 20px;
+    font-size: 1em;
+}
+
+/* Image Manager Modal Specifics */
+#imageManagerModal.app-modal .modal-content { /* Ensure .app-modal is present */
+    max-width: 90%; /* Wider for image manager */
+    height: 90%;
+    padding: 10px;
+}
+
+#imageManagerIframe {
+    width: 100%;
+    height: calc(100% - 60px); /* Adjust height to fit header */
+    border: none;
+}
+
+/* Search Email Modal Specifics */
+#searchEmailModal.app-modal { /* Targeting the specific modal by ID + class */
+    max-width: 1680px; /* Updated from 700px to 1680px */
+}
+
+#searchResultsTable {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+    font-size: 10pt; /* Added font-size from your provided CSS */
+}
+
+#searchResultsTable th,
+#searchResultsTable td {
+    border: 1px solid #ddd;
+    padding: 5px; /* Updated padding from your provided CSS */
+    text-align: left;
+    white-space: nowrap; /* Prevents text from wrapping in table cells */
+    overflow: hidden;     /* Hides overflowed content */
+    text-overflow: ellipsis; /* Adds ellipsis for overflowed content */
+}
+
+#searchResultsTable th {
+    background-color: #f2f2f2;
+}
+
+/* Responsive adjustments for table cells to prevent overflow on small screens */
+@media (max-width: 768px) {
+    #searchResultsTable th,
+    #searchResultsTable td {
+        white-space: normal; /* Allow wrapping on smaller screens if needed */
+        word-break: break-word; /* Break long words */
+    }
+}
+
+/* Emoji Grid */
+#emojiGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(30px, 1fr));
+    gap: 5px;
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #eee;
+    padding: 10px;
+    border-radius: 8px;
+}
+
+#emojiGrid span {
+    font-size: 24px;
+    cursor: pointer;
+    text-align: center;
+    padding: 5px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+#emojiGrid span:hover {
+    background-color: #f0f0f0;
+}
+
+/* Save/Load Block Modals */
+#saveAsModal.app-modal .modal-content, /* Targeting the specific modal by ID + class */
+#loadBlockModal.app-modal .modal-content {
+    max-width: 450px;
+    text-align: center;
+}
+
+#blockNameInput {
+    margin-top: 15px;
+    margin-bottom: 20px;
+}
+
+#savedBlocksList {
+    list-style: none;
+    padding: 0;
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #eee;
+    border-radius: 5px;
+    margin-bottom: 15px;
+    text-align: left;
+}
+
+#savedBlocksList li {
+    padding: 10px 15px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+#savedBlocksList li:last-child {
+    border-bottom: none;
+}
+
+#savedBlocksList li:hover {
+    background-color: #f5f5f5;
+}
+
+#savedBlocksList .block-name {
+    font-weight: bold;
+    color: #00242a;
+    flex-grow: 1; /* Allows name to take space */
+}
+
+#savedBlocksList .block-type {
+    font-size: 0.85em;
+    color: #666;
+    margin-left: 10px;
+    text-transform: capitalize;
+}
+
+#savedBlocksList .actions button {
+    padding: 5px 10px;
+    font-size: 0.8em;
+    margin-left: 5px;
+    margin-bottom: 0; /* Override default button margin */
+}
+
+#noSavedBlocksMessage {
+    color: #888;
+    font-style: italic;
+    margin-top: 20px;
+}
+
+.loading-message {
+    text-align: center;
+    color: #555;
+    padding: 20px;
+}
+
+/* Instructions text */
+.instructions {
+    font-size: 0.9em;
+    color: #666;
+    margin-top: 5px;
+    margin-left: 5px;
+}
+
+
+/* Radio Group Personalization */
+.radio-group-personalization {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
+    padding: 10px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background-color: #fdfdfd;
+}
+
+.radio-group-personalization .radio-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 1.0em;
+    color: #333;
+}
+
+.radio-group-personalization input[type="radio"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid #00242a;
+    border-radius: 50%;
+    margin-right: 10px;
+    position: relative;
+    outline: none;
+    cursor: pointer;
+    flex-shrink: 0; /* Prevent it from shrinking */
+}
+
+.radio-group-personalization input[type="radio"]:checked {
+    background-color: #00242a; /* Filled when checked */
+    border-color: #00242a;
+}
+
+.radio-group-personalization input[type="radio"]:checked::before {
+    content: '';
+    display: block;
+    width: 10px;
+    height: 10px;
+    background-color: #fff; /* White dot inside when checked */
+    border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.radio-group-personalization .radio-icon {
+    font-size: 20px;
+    margin-right: 10px;
+    color: #00242a; /* Icon color */
+}
+
+/* Style for Personalization Dropdown */
+.personalization-dropdown-container {
+    position: relative;
+    display: inline-block;
+    z-index: 500; /* Ensure it's above other elements but below modals */
+}
+
+.personalization-dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #f9f9f9;
+    min-width: 220px; /* Increased width to prevent wrapping */
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1;
+    border-radius: 8px;
+    overflow: hidden; /* Ensures content stays within rounded corners */
+    border: 1px solid #ddd;
+    top: 100%; /* Position below the button */
+    left: 0; /* Align left with button */
+    margin-top: 5px; /* Small gap between button and dropdown */
+}
+
+.personalization-option {
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.personalization-option:hover {
+    background-color: #f1f1f1;
+}
+
+/* Translation Modal Specifics */
+#originalText, #translatedText {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 10px;
+    font-family: 'EPOS Basis', Arial, sans-serif;
+    font-size: 1em;
+    width: 100%;
+    box-sizing: border-box;
+    resize: vertical;
+}
+
+/* Ensure Font Awesome icons display correctly */
+/* This rule helps if other CSS is overriding Font Awesome's default font-family or font-weight */
+.fas {
+    font-family: 'Font Awesome 6 Free', 'Font Awesome 5 Free', 'Font Awesome 6 Pro', 'Font Awesome 5 Pro', sans-serif !important;
+    font-weight: 900 !important; /* For solid icons, ensure this is applied */
+}
+
+/* Added specific toolbar icons for Quill */
+.ql-snow .ql-toolbar button.ql-emoji:before {
+    content: "\1F600"; /* Unicode for a smiley face emoji */
+}
+
+.ql-snow .ql-toolbar button.ql-translate-icon:before {
+    content: "\f0ac"; /* Font Awesome globe icon for translate */
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+}
+
+.modal-preview-iframe {
+    width: 100%;
+    min-height: 100px; /* Minimum height */
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    margin-top: 15px;
+    background-color: #fff;
+}
+
+/* Styles for the "View mail online" link in the footer in the live preview */
+/* These apply inside the iframe as well because they are part of the generated HTML */
+.email-footer a {
+    color: #00242a; /* Link color for EPOS branding */
+    text-decoration: underline;
+}
+
+/* General button styles for the preview toggle */
+.btn {
+    padding: 8px 15px;
+    background-color: #e0e0e0;
+    color: #333;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    font-family: 'EPOS Basis', Arial, sans-serif;
+}
+
+.btn:hover {
+    background-color: #d0d0d0;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+    border-color: #6c757d;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+    border-color: #545b62;
+}
+
+/* Flex layout for search results table for better control */
+#searchResultsList {
+    display: block; /* Ensures it acts as a block container */
+    max-height: 400px; /* Example max height */
+    overflow-y: auto; /* Adds scrollbar if content exceeds max-height */
+    width: 100%; /* Ensure it takes full width of parent */
+    box-sizing: border-box; /* Include padding/border in width */
+}
+
+#searchResultsTable {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#searchResultsTable th,
+#searchResultsTable td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+    white-space: nowrap; /* Prevents text from wrapping in table cells */
+    overflow: hidden;     /* Hides overflowed content */
+    text-overflow: ellipsis; /* Adds ellipsis for overflowed content */
+}
+
+#searchResultsTable th {
+    background-color: #f2f2f2;
+}
+
+/* Responsive adjustments for table cells to prevent overflow on small screens */
+@media (max-width: 768px) {
+    #searchResultsTable th,
+    #searchResultsTable td {
+        white-space: normal; /* Allow wrapping on smaller screens if needed */
+        word-break: break-word; /* Break long words */
+    }
+}

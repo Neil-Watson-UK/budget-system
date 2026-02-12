@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EPOS Sound Blocks Harmony</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* EPOS Color Palette */
+        :root {
+            --epos-black: #131313;
+            --epos-white: #ffffff;
+            --epos-petrol: #00353d;
+            --epos-mint: #44ead6;
+            --epos-burgundy: #3f1e31;
+            --epos-coral: #ff5549;
+            --epos-dark-mint: #00a399;
+            --epos-grey: #a2a9ae;
+            --epos-light-grey: #eeeff1;
+            --epos-dark-petrol: #00242a;
+            --epos-light-dark-mint: #33b8af; /* Brighter variant of Dark Mint */
+        }
+
+        /* Custom 8-bit EPOS styles */
+        body {
+            font-family: 'Press Start 2P', cursive;
+            background-color: var(--epos-black);
+            color: var(--epos-mint);
+            image-rendering: pixelated;
+        }
+        .game-container {
+            background-color: var(--epos-dark-petrol);
+            border: 4px solid var(--epos-mint);
+            border-radius: 0;
+            box-shadow: 0 0 0 4px var(--epos-black), 0 0 0 8px var(--epos-coral);
+        }
+        .game-title {
+            color: var(--epos-coral);
+            text-align: center;
+            text-shadow: 2px 2px 0 var(--epos-black);
+        }
+        .info-card {
+            background-color: var(--epos-petrol);
+            border: 2px solid var(--epos-mint);
+            border-radius: 0;
+            box-shadow: inset 0 0 4px var(--epos-black);
+        }
+        .info-card h3 {
+            color: var(--epos-dark-mint);
+        }
+        .info-card p {
+            color: var(--epos-white);
+            text-shadow: 1px 1px 0 var(--epos-black);
+        }
+        #gameCanvas {
+            background-color: var(--epos-black);
+            border: 4px solid var(--epos-mint);
+            border-radius: 0;
+            image-rendering: pixelated;
+        }
+        .next-piece-container {
+            background-color: var(--epos-petrol);
+            border: 4px solid var(--epos-coral);
+            border-radius: 0;
+        }
+        .next-piece-container h3 {
+            color: var(--epos-coral);
+            text-shadow: 1px 1px 0 var(--epos-black);
+        }
+        .game-button {
+            background-color: var(--epos-coral);
+            color: var(--epos-white);
+            border: 2px solid var(--epos-black);
+            border-radius: 0;
+            font-family: 'Press Start 2P', cursive;
+            box-shadow: 0 0 0 2px var(--epos-mint);
+        }
+        .game-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 0 4px var(--epos-dark-mint);
+            background-color: var(--epos-burgundy);
+        }
+        .game-button:disabled {
+            background-color: var(--epos-grey);
+            box-shadow: none;
+            transform: none;
+        }
+        .message-box-overlay, .video-modal-overlay {
+            background-color: rgba(19, 19, 19, 0.8); /* EPOS Black */
+        }
+        .message-box-content-wrapper {
+            background-color: var(--epos-petrol);
+            border: 4px solid var(--epos-mint);
+            border-radius: 0;
+            box-shadow: 0 0 0 4px var(--epos-black);
+            image-rendering: pixelated;
+        }
+        .message-box-content-wrapper h2 {
+            color: var(--epos-coral);
+            text-shadow: 2px 2px 0 var(--epos-black);
+        }
+        .message-box-content-wrapper p {
+            color: var(--epos-white);
+            text-shadow: 1px 1px 0 var(--epos-black);
+        }
+        .high-scores-table {
+            border: 2px solid var(--epos-mint);
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 1rem;
+        }
+        .high-scores-table th, .high-scores-table td {
+            border: 2px solid var(--epos-mint);
+            padding: 0.5rem;
+            text-align: left;
+            color: var(--epos-white);
+            text-shadow: 1px 1px 0 var(--epos-black);
+        }
+        .high-scores-table th {
+            color: var(--epos-coral);
+        }
+        .video-modal-container {
+            position: relative;
+        }
+        .video-modal-container video {
+            border: 4px solid var(--epos-mint);
+            box-shadow: 0 0 0 4px var(--epos-black);
+            image-rendering: pixelated;
+        }
+        .video-play-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(19, 19, 19, 0.5); /* EPOS Black */
+            z-index: 10;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+        .video-play-overlay:hover {
+            background-color: rgba(19, 19, 19, 0.7);
+        }
+        .play-button {
+            color: var(--epos-coral);
+            text-shadow: 2px 2px 0 var(--epos-black);
+        }
+        @keyframes flash {
+            0% { background-color: var(--epos-mint); }
+            50% { background-color: var(--epos-black); }
+            100% { background-color: var(--epos-black); }
+        }
+        .flash-row {
+            animation: flash 0.3s ease-in-out;
+        }
+        @keyframes fade-out {
+            0% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white flex justify-center items-center min-h-screen p-5">
+
+    <div class="game-container max-w-[90%] w-[600px] sm:w-[500px] p-5">
+        <h1 class="game-title mb-5 text-2xl">EPOS Sound Blocks Harmony</h1>
+        <div class="game-info flex justify-between w-full mb-5">
+            <div class="info-card px-5 py-3 mx-1">
+                <h3 class="text-xl">Score</h3>
+                <p id="scoreDisplay" class="text-2xl font-bold">0</p>
+            </div>
+            <div class="info-card px-5 py-3 mx-1">
+                <h3 class="text-xl">Lines</h3>
+                <p id="linesDisplay" class="text-2xl font-bold">0</p>
+            </div>
+        </div>
+
+        <div class="flex items-start gap-4 w-full justify-center">
+            <canvas id="gameCanvas" width="300" height="600" class="w-[300px] h-[600px] sm:w-[240px] sm:h-[480px]"></canvas>
+            <div class="next-piece-container flex-shrink-0 p-2">
+                <h3 class="text-lg">Next</h3>
+                <canvas id="nextPieceCanvas" width="120" height="120" class="w-[120px] h-[120px] sm:w-[96px] sm:h-[96px]"></canvas>
+            </div>
+        </div>
+
+        <div class="game-controls flex gap-4 justify-center flex-wrap mt-5">
+            <button id="startButton" class="game-button px-5 py-3 shadow-md transition-all hover:translate-y-1 hover:shadow-lg">
+                <i class="fas fa-play"></i> Start
+            </button>
+            <button id="pauseButton" class="game-button px-5 py-3 shadow-md transition-all hover:translate-y-1 hover:shadow-lg hidden">
+                <i class="fas fa-pause"></i> Pause
+            </button>
+            <button id="restartButton" class="game-button px-5 py-3 shadow-md transition-all hover:translate-y-1 hover:shadow-lg hidden">
+                <i class="fas fa-redo"></i> Restart
+            </button>
+            <button id="muteButton" class="game-button px-5 py-3 shadow-md transition-all hover:translate-y-1 hover:shadow-lg">
+                <i class="fas fa-volume-up"></i> Mute
+            </button>
+        </div>
+    </div>
+    
+    <div id="messageBox" class="message-box-overlay hidden fixed inset-0 flex justify-center items-center z-[1000]">
+        <div class="message-box-content-wrapper p-5 max-w-[400px]">
+            <h2 id="messageBoxTitle" class="text-xl"></h2>
+            <div id="messageBoxContent" class="my-4"></div>
+            <table id="highScoresTable" class="high-scores-table hidden">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Score</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody id="highScoresBody"></tbody>
+            </table>
+            <button id="messageBoxOkBtn" class="game-button px-5 py-3 mt-5 shadow-md transition-all hover:translate-y-1 hover:shadow-lg">OK</button>
+        </div>
+    </div>
+
+    <div id="videoModal" class="video-modal-overlay fixed inset-0 flex justify-center items-center z-[1000]">
+        <div class="video-modal-container relative w-[700px] h-[700px] max-w-[90%] max-h-[90vh]">
+            <video id="videoPlayer" width="700" height="700" preload="auto" autoplay>
+                <source src="eposholidays2025.mp4" type="video/mp4">
+            </video>
+            <div id="videoPlayOverlay" class="video-play-overlay hidden flex justify-center items-center cursor-pointer">
+                <i class="fas fa-play-circle play-button text-6xl"></i>
+            </div>
+        </div>
+    </div>
+
+    <audio id="backgroundMusic" loop>
+        <source src="/quest/sounds/day1.mp3" type="audio/mp3">
+    </audio>
+
+<script>
+    /**
+     * Standalone Tetris Game with Background Music and High Scores
+     *
+     * This script contains all the logic for a classic Tetris game,
+     * including game state management, piece movement, collision detection,
+     * line clearing, background music, high scores, and rendering on an HTML canvas.
+     *
+     * @author Gemini Assistant
+     * @version 1.2.2
+     * @date 2025-09-16
+     */
+    
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- Game Configuration ---
+        const COLS = 10;
+        const ROWS = 20;
+        const BLOCK_SIZE = 30; // Increased for 8-bit look
+        const COLORS = {
+            'I': '#44ead6', // EPOS Mint
+            'J': '#ff5549', // EPOS Coral
+            'L': '#ffffff', // EPOS White
+            'O': '#00353d', // EPOS Petrol
+            'S': '#ff5549', // EPOS Coral
+            'T': '#33b8af', // Brighter variant of EPOS Dark Mint
+            'Z': '#eeeff1'  // EPOS Light Grey
+        };
+        
+        // Tetrimino shapes
+        const SHAPES = {
+            'I': [[0, 0, 0, 0], [1, 1, 1, 1], [0, 0, 0, 0], [0, 0, 0, 0]],
+            'J': [[1, 0, 0], [1, 1, 1], [0, 0, 0]],
+            'L': [[0, 0, 1], [1, 1, 1], [0, 0, 0]],
+            'O': [[1, 1], [1, 1]],
+            'S': [[0, 1, 1], [1, 1, 0], [0, 0, 0]],
+            'T': [[0, 1, 0], [1, 1, 1], [0, 0, 0]],
+            'Z': [[1, 1, 0], [0, 1, 1], [0, 0, 0]],
+        };
+
+        // --- DOM Element References ---
+        const gameCanvas = document.getElementById('gameCanvas');
+        const nextPieceCanvas = document.getElementById('nextPieceCanvas');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const linesDisplay = document.getElementById('linesDisplay');
+        const startButton = document.getElementById('startButton');
+        const pauseButton = document.getElementById('pauseButton');
+        const restartButton = document.getElementById('restartButton');
+        const muteButton = document.getElementById('muteButton');
+        const messageBox = document.getElementById('messageBox');
+        const messageBoxTitle = document.getElementById('messageBoxTitle');
+        const messageBoxContent = document.getElementById('messageBoxContent');
+        const highScoresTable = document.getElementById('highScoresTable');
+        const highScoresBody = document.getElementById('highScoresBody');
+        const messageBoxOkBtn = document.getElementById('messageBoxOkBtn');
+        const videoModal = document.getElementById('videoModal');
+        const videoPlayer = document.getElementById('videoPlayer');
+        const videoPlayOverlay = document.getElementById('videoPlayOverlay');
+        const backgroundMusic = document.getElementById('backgroundMusic');
+
+        const ctx = gameCanvas.getContext('2d');
+        const nextCtx = nextPieceCanvas.getContext('2d');
+        
+        // --- Game State Variables ---
+        let board = [];
+        let score = 0;
+        let linesCleared = 0;
+        let currentPiece;
+        let nextPiece;
+        let gameRunning = false;
+        let dropCounter = 0;
+        let dropInterval = 1000; // milliseconds
+        let lastTime = 0;
+        let comboCount = 0; // For score multiplier
+        let lastClearTime = 0; // For combo timing
+        const COMBO_WINDOW = 5000; // 5 seconds for combo
+        let isMuted = false; // Audio state
+        let highScores = JSON.parse(localStorage.getItem('highScores')) || [];
+        
+        // --- Modal Functions ---
+        
+        /**
+         * Shows the message box with a title, content, and optional high scores table.
+         * @param {string} title The modal title.
+         * @param {string} content The modal content (HTML supported).
+         * @param {boolean} showHighScores Whether to show the high scores table.
+         */
+        function showMessageBox(title, content, showHighScores = false) {
+            messageBoxTitle.textContent = title;
+            messageBoxContent.innerHTML = content;
+            messageBox.classList.remove('hidden');
+            highScoresTable.classList.toggle('hidden', !showHighScores);
+        }
+        
+        // --- Game Logic Functions ---
+        
+        /**
+         * Initializes the game state.
+         */
+        function initializeGame() {
+            // Reset state
+            board = Array(ROWS).fill(null).map(() => Array(COLS).fill(0));
+            score = 0;
+            linesCleared = 0;
+            comboCount = 0;
+            scoreDisplay.textContent = score;
+            linesDisplay.textContent = linesCleared;
+            dropInterval = 1000;
+            
+            // Spawn initial pieces
+            currentPiece = null;
+            nextPiece = createPiece();
+            spawnPiece();
+            
+            // Set up button visibility
+            startButton.classList.add('hidden');
+            pauseButton.classList.remove('hidden');
+            restartButton.classList.remove('hidden');
+            gameRunning = true;
+            
+            // Start background music
+            if (!isMuted) {
+                backgroundMusic.play().catch(() => {
+                    console.log('Autoplay blocked for music, will play on user interaction');
+                });
+            }
+            
+            // Start the game loop
+            lastTime = 0;
+            gameLoop();
+        }
+
+        /**
+         * Spawns a new Tetrimino at the top of the board.
+         */
+        function spawnPiece() {
+            currentPiece = nextPiece;
+            currentPiece.x = Math.floor(COLS / 2) - Math.floor(currentPiece.shape[0].length / 2);
+            currentPiece.y = 0;
+            
+            nextPiece = createPiece();
+            drawNextPiece();
+            
+            if (checkCollision()) {
+                endGame();
+            }
+        }
+        
+        /**
+         * Creates a new random Tetrimino.
+         * @returns {object} The new piece object.
+         */
+        function createPiece() {
+            const keys = Object.keys(SHAPES);
+            const randomKey = keys[Math.floor(Math.random() * keys.length)];
+            const shape = SHAPES[randomKey];
+            const color = COLORS[randomKey];
+            return { shape, color, x: 0, y: 0 };
+        }
+        
+        /**
+         * The main game loop.
+         * @param {number} time The timestamp provided by requestAnimationFrame.
+         */
+        function gameLoop(time = 0) {
+            if (!gameRunning) return;
+            const deltaTime = time - lastTime;
+            lastTime = time;
+
+            dropCounter += deltaTime;
+            if (dropCounter > dropInterval) {
+                dropPiece();
+            }
+            
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        /**
+         * Moves the current piece down one step.
+         */
+        function dropPiece() {
+            currentPiece.y++;
+            if (checkCollision()) {
+                currentPiece.y--;
+                lockPiece();
+                clearLines();
+                spawnPiece();
+            }
+            dropCounter = 0;
+        }
+
+        /**
+         * Moves the current piece horizontally.
+         * @param {number} direction The direction to move (-1 for left, 1 for right).
+         */
+        function movePiece(direction) {
+            if (!gameRunning) return;
+            currentPiece.x += direction;
+            if (checkCollision()) {
+                currentPiece.x -= direction;
+            }
+        }
+
+        /**
+         * Rotates the current piece.
+         */
+        function rotatePiece() {
+            if (!gameRunning) return;
+            const newShape = currentPiece.shape[0].map((_, colIndex) => currentPiece.shape.map(row => row[colIndex]));
+            const rotatedShape = newShape.map(row => row.reverse());
+            const originalShape = currentPiece.shape;
+            currentPiece.shape = rotatedShape;
+            if (checkCollision()) {
+                currentPiece.shape = originalShape;
+            }
+        }
+
+        /**
+         * Checks if the current piece collides with the board boundaries or other pieces.
+         * @returns {boolean} True if a collision is detected, false otherwise.
+         */
+        function checkCollision() {
+            const shape = currentPiece.shape;
+            for (let y = 0; y < shape.length; y++) {
+                for (let x = 0; x < shape[y].length; x++) {
+                    if (shape[y][x] !== 0) {
+                        const boardX = currentPiece.x + x;
+                        const boardY = currentPiece.y + y;
+                        if (boardX < 0 || boardX >= COLS || boardY >= ROWS) {
+                            return true;
+                        }
+                        if (boardY >= 0 && board[boardY][boardX] !== 0) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+        
+        /**
+         * Locks the current piece into the board array.
+         */
+        function lockPiece() {
+            const shape = currentPiece.shape;
+            for (let y = 0; y < shape.length; y++) {
+                for (let x = 0; x < shape[y].length; x++) {
+                    if (shape[y][x] !== 0) {
+                        const boardX = currentPiece.x + x;
+                        const boardY = currentPiece.y + y;
+                        if (boardY >= 0) {
+                            board[boardY][boardX] = currentPiece.color;
+                        }
+                    }
+                }
+            }
+        }
+        
+        /**
+         * Clears completed lines and adds flash effect.
+         */
+        function clearLines() {
+            let clearedCount = 0;
+            const clearedRows = [];
+            for (let y = ROWS - 1; y >= 0; y--) {
+                const row = board[y];
+                if (row.every(cell => cell !== 0)) {
+                    clearedRows.push(y);
+                    board.splice(y, 1);
+                    board.unshift(Array(COLS).fill(0));
+                    clearedCount++;
+                    y++;
+                }
+            }
+            if (clearedCount > 0) {
+                flashClearedLines(clearedRows);
+                updateScore(clearedCount);
+            }
+        }
+        
+        /**
+         * Flashes cleared lines with Mint color.
+         * @param {number[]} rows The indices of cleared rows.
+         */
+        function flashClearedLines(rows) {
+            rows.forEach(y => {
+                ctx.fillStyle = '#44ead6'; // EPOS Mint
+                ctx.fillRect(0, y * BLOCK_SIZE, COLS * BLOCK_SIZE, BLOCK_SIZE);
+            });
+            gameCanvas.classList.add('flash-row');
+            setTimeout(() => {
+                gameCanvas.classList.remove('flash-row');
+                draw();
+            }, 300); // Match flash animation duration
+        }
+        
+        /**
+         * Updates the game score with combo multiplier.
+         * @param {number} count The number of lines cleared.
+         */
+        function updateScore(count) {
+            const currentTime = Date.now();
+            if (currentTime - lastClearTime < COMBO_WINDOW) {
+                comboCount++;
+            } else {
+                comboCount = 1;
+            }
+            lastClearTime = currentTime;
+            
+            const basePoints = [0, 100, 300, 500, 800][count];
+            const multiplier = Math.min(comboCount, 5); // Cap at 5x
+            score += basePoints * multiplier;
+            linesCleared += count;
+            linesDisplay.textContent = linesCleared;
+            scoreDisplay.textContent = score;
+            
+            // Increase speed every 10 lines
+            dropInterval = Math.max(100, 1000 - Math.floor(linesCleared / 10) * 50);
+        }
+        
+        /**
+         * Updates and displays high scores.
+         */
+        function updateHighScores() {
+            const date = new Date().toLocaleDateString();
+            highScores.push({ score, date });
+            highScores.sort((a, b) => b.score - a.score);
+            highScores = highScores.slice(0, 5); // Keep top 5
+            localStorage.setItem('highScores', JSON.stringify(highScores));
+            
+            highScoresBody.innerHTML = '';
+            highScores.forEach((entry, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${entry.score}</td>
+                    <td>${entry.date}</td>
+                `;
+                highScoresBody.appendChild(row);
+            });
+        }
+        
+        /**
+         * Pauses the game and music.
+         */
+        function pauseGame() {
+            gameRunning = false;
+            backgroundMusic.pause();
+            showMessageBox('Game Paused', 'Click OK or the Start button to resume.');
+            pauseButton.classList.add('hidden');
+            startButton.classList.remove('hidden');
+            highScoresTable.classList.add('hidden');
+        }
+        
+        /**
+         * Ends the game with fade-out animation and shows high scores.
+         */
+        function endGame() {
+            gameRunning = false;
+            backgroundMusic.pause();
+            animateGameOver();
+            updateHighScores();
+            showMessageBox('Game Over!', `Your final score is: ${score}<br>Lines cleared: ${linesCleared}<br>Max Combo: ${comboCount}x`, true);
+            startButton.classList.add('hidden');
+            pauseButton.classList.add('hidden');
+            restartButton.classList.remove('hidden');
+        }
+        
+        /**
+         * Animates game over with fading blocks.
+         */
+        function animateGameOver() {
+            let opacity = 1;
+            const fadeInterval = setInterval(() => {
+                ctx.globalAlpha = opacity;
+                draw();
+                opacity -= 0.1;
+                if (opacity <= 0) {
+                    clearInterval(fadeInterval);
+                    ctx.globalAlpha = 1;
+                    draw();
+                }
+            }, 100);
+        }
+        
+        // --- Drawing Functions ---
+        
+        /**
+         * Draws a single block on the canvas.
+         * @param {number} x The x-coordinate of the block.
+         * @param {number} y The y-coordinate of the block.
+         * @param {string} color The color of the block.
+         * @param {CanvasRenderingContext2D} context The canvas context to draw on.
+         */
+        function drawBlock(x, y, color, context) {
+            if (color === 0) return;
+            context.fillStyle = color;
+            context.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+            context.strokeStyle = '#131313'; // EPOS Black
+            context.lineWidth = 2;
+            context.strokeRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+        }
+        
+        /**
+         * Main drawing function.
+         */
+        function draw() {
+            ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+            for (let y = 0; y < ROWS; y++) {
+                for (let x = 0; x < COLS; x++) {
+                    drawBlock(x, y, board[y][x], ctx);
+                }
+            }
+            if (currentPiece) {
+                const shape = currentPiece.shape;
+                const color = currentPiece.color;
+                for (let y = 0; y < shape.length; y++) {
+                    for (let x = 0; x < shape[y].length; x++) {
+                        if (shape[y][x] !== 0) {
+                            drawBlock(currentPiece.x + x, currentPiece.y + y, color, ctx);
+                        }
+                    }
+                }
+            }
+        }
+        
+        /**
+         * Draws the next piece.
+         */
+        function drawNextPiece() {
+            nextCtx.clearRect(0, 0, nextPieceCanvas.width, nextPieceCanvas.height);
+            if (nextPiece) {
+                const shape = nextPiece.shape;
+                const color = nextPiece.color;
+                for (let y = 0; y < shape.length; y++) {
+                    for (let x = 0; x < shape[y].length; x++) {
+                        if (shape[y][x] !== 0) {
+                            const startX = (nextPieceCanvas.width - shape[0].length * BLOCK_SIZE) / 2;
+                            const startY = (nextPieceCanvas.height - shape.length * BLOCK_SIZE) / 2;
+                            nextCtx.fillStyle = color;
+                            nextCtx.fillRect(startX + x * BLOCK_SIZE, startY + y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+                            nextCtx.strokeStyle = '#131313';
+                            nextCtx.lineWidth = 2;
+                            nextCtx.strokeRect(startX + x * BLOCK_SIZE, startY + y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+                        }
+                    }
+                }
+            }
+        }
+
+        // --- Event Listeners ---
+        
+        // Keyboard controls
+        document.addEventListener('keydown', e => {
+            if (!gameRunning) return;
+            switch (e.key) {
+                case 'ArrowLeft':
+                    movePiece(-1);
+                    break;
+                case 'ArrowRight':
+                    movePiece(1);
+                    break;
+                case 'ArrowDown':
+                    dropPiece();
+                    break;
+                case 'ArrowUp':
+                    rotatePiece();
+                    break;
+                case ' ':
+                    while (!checkCollision()) {
+                        currentPiece.y++;
+                    }
+                    currentPiece.y--;
+                    dropPiece();
+                    break;
+            }
+        });
+
+        // UI Button Handlers
+        startButton.addEventListener('click', () => {
+            if (gameRunning) {
+                gameRunning = true;
+                pauseButton.classList.remove('hidden');
+                startButton.classList.add('hidden');
+                messageBox.classList.add('hidden');
+                highScoresTable.classList.add('hidden');
+                lastTime = 0;
+                if (!isMuted) backgroundMusic.play();
+                gameLoop();
+            } else {
+                initializeGame();
+            }
+        });
+
+        pauseButton.addEventListener('click', pauseGame);
+        restartButton.addEventListener('click', () => {
+            messageBox.classList.add('hidden');
+            highScoresTable.classList.add('hidden');
+            initializeGame();
+        });
+        
+        messageBoxOkBtn.addEventListener('click', () => {
+            messageBox.classList.add('hidden');
+            highScoresTable.classList.add('hidden');
+            if (gameRunning) {
+                lastTime = 0;
+                if (!isMuted) backgroundMusic.play();
+                gameLoop();
+            }
+        });
+
+        muteButton.addEventListener('click', () => {
+            isMuted = !isMuted;
+            backgroundMusic.muted = isMuted;
+            muteButton.innerHTML = `<i class="fas fa-volume-${isMuted ? 'mute' : 'up'}"></i> ${isMuted ? 'Unmute' : 'Mute'}`;
+        });
+
+        // --- Video Intro Logic ---
+        function showVideoIntro() {
+            videoModal.classList.remove('hidden');
+            videoPlayer.src = 'eposholidays2025.mp4';
+            videoPlayer.play().catch(() => {
+                videoPlayOverlay.classList.remove('hidden');
+            });
+        }
+
+        function hideVideoIntro() {
+            videoPlayer.pause();
+            videoModal.classList.add('hidden');
+            setTimeout(() => {
+                showMessageBox('Welcome to EPOS Sound Blocks Harmony!', 'Use the arrow keys to move and rotate the blocks. Press the spacebar for a hard drop. Press Start to begin!');
+            }, 100);
+        }
+
+        videoPlayOverlay.addEventListener('click', () => {
+            videoPlayOverlay.classList.add('hidden');
+            videoPlayer.play();
+        });
+
+        videoPlayer.onended = () => {
+            hideVideoIntro();
+        };
+
+        setTimeout(hideVideoIntro, 10500);
+
+        showVideoIntro();
+        
+    });
+</script>
+
+</body>
+</html>

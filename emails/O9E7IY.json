@@ -1,0 +1,62 @@
+{
+    "articles": {
+        "1": {
+            "type": "single",
+            "mainImage": "https:\/\/eposaudioevents.com\/emailtemplates\/uploads\/img_6849535f0c1db.png",
+            "header": "Un casque ultra-l\u00e9ger, id\u00e9al pour les professionnels qui parlent beaucoup.",
+            "headerAlignment": "center",
+            "headerFontWeight": "100",
+            "content": "<p>L'IMPACT 100 est un casque d'entr\u00e9e de gamme qui offre un rapport qualit\u00e9-prix exceptionnel. Avec des fonctionnalit\u00e9s intelligentes qui am\u00e9liorent l'efficacit\u00e9 et une conception ultra-l\u00e9g\u00e8re, c'est un casque id\u00e9al pour les professionnels qui passent beaucoup de temps au t\u00e9l\u00e9phone.<\/p><p><br><\/p><p>Si vous recherchez un casque de qualit\u00e9 professionnelle et abordable, l'IMPACT 100 est le meilleur de sa cat\u00e9gorie.<\/p>",
+            "contentAlignment": "center",
+            "buttonText": "En savoir plus",
+            "buttonUrl": "https:\/\/www.eposaudio.com\/products\/impact-100",
+            "backgroundColor": "#ffffff"
+        },
+        "2": {
+            "type": "double",
+            "leftImage": "",
+            "leftHeader": "One-pager",
+            "leftHeaderAlignment": "center",
+            "leftHeaderFontWeight": "400",
+            "leftContent": "<p>D\u00e9couvrez les diff\u00e9rences cl\u00e9s entre la version originale et la nouvelle version de l'IMPACT 100.<\/p>",
+            "leftContentAlignment": "center",
+            "leftButtonText": "Download",
+            "leftButtonUrl": "#",
+            "rightImage": "",
+            "rightHeader": "Fact sheet",
+            "rightHeaderAlignment": "center",
+            "rightHeaderFontWeight": "400",
+            "rightContent": "<p>T\u00e9l\u00e9chargez notre fiche d'information pour d\u00e9couvrir les d\u00e9tails d'IMPACT 100.<\/p>",
+            "rightContentAlignment": "center",
+            "rightButtonText": "Download",
+            "rightButtonUrl": "#",
+            "leftColumnWidth": 50,
+            "rightColumnWidth": 50,
+            "backgroundColor": "#eeeff1"
+        }
+    },
+    "articleBlocks": [
+        {
+            "position": 1,
+            "type": "single"
+        },
+        {
+            "position": 2,
+            "type": "double"
+        }
+    ],
+    "subjectLine": "Introducing the new IMPACT 100",
+    "preheaderText": "Ultra-light design for all-day comfort",
+    "backgroundImage": "",
+    "logoUrl": "https:\/\/eposaudioevents.com\/emailtemplates\/uploads\/img_685506ba9c2b8.png",
+    "senderName": "Neil Watson",
+    "senderEmail": "newa@eposaudio.com",
+    "senderMobile": "",
+    "personalizationType": "salesforce_marketing_cloud",
+    "region": "FRANCE",
+    "audience": "channel",
+    "emailFrom": "newa@eposaudio.com",
+    "sendTime": "2025-06-27T10:09",
+    "createdBy": "Neil",
+    "referenceCode": "O9E7IY"
+}

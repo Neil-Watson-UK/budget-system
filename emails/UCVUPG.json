@@ -1,0 +1,35 @@
+{
+    "referenceCode": "UCVUPG",
+    "subjectLine": "Elevate your conversation.",
+    "preheaderText": "with the new ultra light IMPACT 100 headset",
+    "backgroundImage": "",
+    "logoUrl": "https:\/\/eposaudioevents.com\/emailtemplates\/uploads\/img_683f0affc30f2.png",
+    "senderName": "Neil Watson",
+    "senderEmail": "newa@eposaudio.com",
+    "senderMobile": "07824171519",
+    "personalizationType": "none",
+    "region": "AMER",
+    "audience": "",
+    "emailFrom": "",
+    "sendTime": "",
+    "articleBlocks": [
+        {
+            "position": 1,
+            "type": "single"
+        }
+    ],
+    "articles": {
+        "1": {
+            "type": "single",
+            "mainImage": "https:\/\/eposaudioevents.com\/emailtemplates\/uploads\/img_68406ad9d26e59.74548267.png",
+            "header": "Elevate your conversation.",
+            "headerAlignment": "center",
+            "headerFontWeight": "400",
+            "content": "<p><br><\/p><p>The IMPACT 100 is an entry-level headset that delivers exceptional value for money. With smart features that enhance efficiency and an ultra-lightweight design, it is an ideal headset for talk-heavy professionals.<\/p><p><br><\/p><ul><li>Professional quality and affordable, UC certified headsets<\/li><li>The lightest stereo headset in its category, featuring a soft silicone headband<\/li><li>In-line controller with backlit buttons for effortless call control<\/li><li>High-quality materials and robust design guarantee durability for daily use<\/li><li>Connect easily with any office set-up with the included USB-C and USB-A adapter<\/li><\/ul>",
+            "contentAlignment": "left",
+            "buttonText": "Learn more",
+            "buttonUrl": "https:\/\/eposaudioevents.com\/impact100\/"
+        }
+    },
+    "createdBy": "neil_watson"
+}

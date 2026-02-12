@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EPOS Audio Flappy Headset</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* EPOS Color Palette */
+        :root {
+            --epos-black: #131313;
+            --epos-white: #ffffff;
+            --epos-petrol: #00353d;
+            --epos-mint: #44ead6;
+            --epos-burgundy: #3f1e31;
+            --epos-coral: #ff5549;
+            --epos-dark-mint: #00a399;
+            --epos-grey: #a2a9ae;
+            --epos-light-grey: #eeeff1;
+            --epos-dark-petrol: #00242a;
+            --epos-light-dark-mint: #33b8af;
+        }
+
+        /* Custom 8-bit EPOS Audio styles */
+        body {
+            font-family: 'Press Start 2P', cursive;
+            background-color: var(--epos-black);
+            color: var(--epos-mint);
+            image-rendering: pixelated;
+        }
+        .game-container {
+            background-color: var(--epos-dark-petrol);
+            border: 4px solid var(--epos-mint);
+            border-radius: 0;
+            box-shadow: 0 0 0 4px var(--epos-black), 0 0 0 8px var(--epos-coral);
+        }
+        .game-title {
+            color: var(--epos-coral);
+            text-align: center;
+            text-shadow: 2px 2px 0 var(--epos-black);
+        }
+        .info-card {
+            background-color: var(--epos-petrol);
+            border: 2px solid var(--epos-mint);
+            border-radius: 0;
+            box-shadow: inset 0 0 4px var(--epos-black);
+        }
+        .info-card h3 {
+            color: var(--epos-dark-mint);
+        }
+        .info-card p {
+            color: var(--epos-white);
+            text-shadow: 1px 1px 0 var(--epos-black);
+        }
+        #gameCanvas {
+            background-color: var(--epos-black);
+            border: 4px solid var(--epos-mint);
+            border-radius: 0;
+            image-rendering: pixelated;
+        }
+        .game-button {
+            background-color: var(--epos-coral);
+            color: var(--epos-white);
+            border: 2px solid var(--epos-black);
+            border-radius: 0;
+            font-family: 'Press Start 2P', cursive;
+            box-shadow: 0 0 0 2px var(--epos-mint);
+        }
+        .game-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 0 4px var(--epos-dark-mint);
+            background-color: var(--epos-burgundy);
+        }
+        .game-button:disabled {
+            background-color: var(--epos-grey);
+            box-shadow: none;
+            transform: none;
+        }
+        .message-box-overlay, .video-modal-overlay {
+            background-color: rgba(19, 19, 19, 0.8); /* EPOS Black */
+        }
+        .message-box-content-wrapper {
+            background-color: var(--epos-petrol);
+            border: 4px solid var(--epos-mint);
+            border-radius: 0;
+            box-shadow: 0 0 0 4px var(--epos-black);
+            image-rendering: pixelated;
+        }
+        .message-box-content-wrapper h2 {
+            color: var(--epos-coral);
+            text-shadow: 2px 2px 0 var(--epos-black);
+        }
+        .message-box-content-wrapper p {
+            color: var(--epos-white);
+            text-shadow: 1px 1px 0 var(--epos-black);
+        }
+        .high-scores-table {
+            border: 2px solid var(--epos-mint);
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 1rem;
+        }
+        .high-scores-table th, .high-scores-table td {
+            border: 2px solid var(--epos-mint);
+            padding: 0.5rem;
+            text-align: left;
+            color: var(--epos-white);
+            text-shadow: 1px 1px 0 var(--epos-black);
+        }
+        .high-scores-table th {
+            color: var(--epos-coral);
+        }
+        .video-modal-container {
+            position: relative;
+        }
+        .video-modal-container video {
+            border: 4px solid var(--epos-mint);
+            box-shadow: 0 0 0 4px var(--epos-black);
+            image-rendering: pixelated;
+        }
+        .video-play-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(19, 19, 19, 0.5);
+            z-index: 10;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+        .video-play-overlay:hover {
+            background-color: rgba(19, 19, 19, 0.7);
+        }
+        .play-button {
+            color: var(--epos-coral);
+            text-shadow: 2px 2px 0 var(--epos-black);
+        }
+        @keyframes headset-flap {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(-5deg); }
+        }
+        .flapping {
+            animation: headset-flap 0.5s ease-in-out infinite;
+        }
+        @keyframes fade-out {
+            0% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        @keyframes scroll-tiles {
+            100% { transform: translateX(-50px); }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white flex justify-center items-center min-h-screen p-5">
+
+    <div class="game-container max-w-[90%] w-[400px] sm:w-[350px] p-5">
+        <h1 class="game-title mb-5 text-xl">EPOS Audio Flappy Headset</h1>
+        <div class="game-info flex justify-center w-full mb-5">
+            <div class="info-card px-5 py-3">
+                <h3 class="text-lg">SCORE</h3>
+                <p id="scoreDisplay" class="text-xl font-bold">0</p>
+            </div>
+        </div>
+
+        <div class="flex justify-center relative">
+            <canvas id="gameCanvas" width="400" height="600" class="w-[400px] h-[600px] sm:w-[350px] sm:h-[525px]"></canvas>
+        </div>
+
+        <div class="game-controls flex gap-4 justify-center flex-wrap mt-5">
+            <button id="startButton" class="game-button px-4 py-2 shadow-md transition-all hover:translate-y-1 hover:shadow-lg">
+                <i class="fas fa-play"></i> Start Game
+            </button>
+            <button id="resetButton" class="game-button px-4 py-2 shadow-md transition-all hover:translate-y-1 hover:shadow-lg hidden">
+                <i class="fas fa-redo"></i> Reset Game
+            </button>
+            <button id="muteButton" class="game-button px-4 py-2 shadow-md transition-all hover:translate-y-1 hover:shadow-lg">
+                <i class="fas fa-volume-up"></i> Mute
+            </button>
+        </div>
+    </div>
+    
+    <div id="messageBox" class="message-box-overlay hidden fixed inset-0 flex justify-center items-center z-[1000]">
+        <div class="message-box-content-wrapper p-5 max-w-[400px]">
+            <h2 id="messageBoxTitle" class="text-xl"></h2>
+            <div id="messageBoxContent" class="my-4"></div>
+            <table id="highScoresTable" class="high-scores-table hidden">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Score</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody id="highScoresBody"></tbody>
+            </table>
+            <button id="messageBoxOkBtn" class="game-button px-5 py-3 mt-5 shadow-md transition-all hover:translate-y-1 hover:shadow-lg">OK</button>
+        </div>
+    </div>
+
+    <div id="videoModal" class="video-modal-overlay fixed inset-0 flex justify-center items-center z-[1000]">
+        <div class="video-modal-container relative w-[700px] h-[700px] max-w-[90%] max-h-[90vh]">
+            <video id="videoPlayer" width="700" height="700" preload="auto" autoplay>
+                <source src="eposholidays2025.mp4" type="video/mp4">
+            </video>
+            <div id="videoPlayOverlay" class="video-play-overlay hidden flex justify-center items-center cursor-pointer">
+                <i class="fas fa-play-circle play-button text-6xl"></i>
+            </div>
+        </div>
+    </div>
+
+    <audio id="backgroundMusic" loop>
+        <source src="/quest/sounds/day3.mp3" type="audio/mp3">
+    </audio>
+
+<script>
+    /**
+     * EPOS Audio Flappy Headset Game with 8-bit Styling
+     *
+     * This script implements a Flappy Bird-style game themed around EPOS Audio headsets,
+     * with headset flapping mechanics, pipe obstacles, audio boosts, scoring, collision
+     * detection, background music, high scores, and rendering on an HTML canvas with
+     * a scrolling dark grey tile background.
+     *
+     * @author Grok
+     * @version 1.0.4
+     * @date 2025-09-17
+     */
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- Game Configuration ---
+        const CANVAS_WIDTH = 400;
+        const CANVAS_HEIGHT = 600;
+        const HEADSET_WIDTH = 30;
+        const HEADSET_HEIGHT = 25;
+        const PIPE_WIDTH = 60;
+        const PIPE_GAP = 200;
+        const PIPE_SPEED = 2;
+        const GRAVITY = 0.3;
+        const JUMP_STRENGTH = -8;
+        const BOOST_DURATION = 5000;
+        const TILE_SIZE = 50;
+        const SCROLL_SPEED = 1;
+        const COLORS = [
+            '#44ead6', // EPOS Mint
+            '#ff5549', // EPOS Coral
+            '#ffffff', // EPOS White
+            '#33b8af', // EPOS Light Dark Mint
+            '#4a4a4a'  // EPOS Dark Grey (updated from #eeeff1)
+        ];
+
+        // --- DOM Element References ---
+        const gameCanvas = document.getElementById('gameCanvas');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const startButton = document.getElementById('startButton');
+        const resetButton = document.getElementById('resetButton');
+        const muteButton = document.getElementById('muteButton');
+        const messageBox = document.getElementById('messageBox');
+        const messageBoxTitle = document.getElementById('messageBoxTitle');
+        const messageBoxContent = document.getElementById('messageBoxContent');
+        const highScoresTable = document.getElementById('highScoresTable');
+        const highScoresBody = document.getElementById('highScoresBody');
+        const messageBoxOkBtn = document.getElementById('messageBoxOkBtn');
+        const videoModal = document.getElementById('videoModal');
+        const videoPlayer = document.getElementById('videoPlayer');
+        const videoPlayOverlay = document.getElementById('videoPlayOverlay');
+        const backgroundMusic = document.getElementById('backgroundMusic');
+
+        const ctx = gameCanvas.getContext('2d');
+        console.log('Canvas context initialized successfully');
+
+        // --- Game State Variables ---
+        let headsetX = 100;
+        let headsetY = CANVAS_HEIGHT / 2;
+        let headsetVelocity = 0;
+        let pipes = [];
+        let boosts = [];
+        let score = 0;
+        let gameRunning = false;
+        let gameStarted = false;
+        let highScores = JSON.parse(localStorage.getItem('highScoresFlappyDay3')) || [];
+        let isMuted = false;
+        let frameCount = 0;
+        let boostActive = false;
+        let boostTimeout;
+        let tileOffset = 0;
+
+        // --- Modal Functions ---
+        function showMessageBox(title, content, showHighScores = false) {
+            messageBoxTitle.textContent = title;
+            messageBoxContent.innerHTML = content;
+            messageBox.classList.remove('hidden');
+            highScoresTable.classList.toggle('hidden', !showHighScores);
+        }
+
+        // --- Game Logic Functions ---
+        function initializeGame() {
+            headsetX = 100;
+            headsetY = CANVAS_HEIGHT / 2;
+            headsetVelocity = 0;
+            pipes = [];
+            boosts = [];
+            score = 0;
+            gameStarted = false;
+            scoreDisplay.textContent = score;
+            startButton.classList.add('hidden');
+            resetButton.classList.remove('hidden');
+            gameRunning = true;
+            if (!isMuted) {
+                backgroundMusic.play().catch(e => console.log('Autoplay blocked:', e));
+            }
+            console.log('Game initialized');
+            gameLoop();
+        }
+
+        function resetGame() {
+            initializeGame();
+            messageBox.classList.add('hidden');
+            highScoresTable.classList.add('hidden');
+        }
+
+        function gameLoop() {
+            if (!gameRunning) return;
+
+            frameCount++;
+            tileOffset = (tileOffset - SCROLL_SPEED) % TILE_SIZE;
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function update() {
+            if (!gameStarted) return;
+
+            // Headset physics
+            headsetVelocity += GRAVITY;
+            headsetY += headsetVelocity;
+
+            // Generate pipes
+            if (frameCount % 150 === 0) {
+                const gapY = Math.random() * (CANVAS_HEIGHT - PIPE_GAP - 200) + 100;
+                pipes.push({
+                    x: CANVAS_WIDTH,
+                    topHeight: gapY,
+                    bottomY: gapY + PIPE_GAP,
+                    passed: false
+                });
+                // Random chance to spawn a boost
+                if (Math.random() < 0.3) {
+                    boosts.push({ x: CANVAS_WIDTH, y: Math.random() * (CANVAS_HEIGHT - 50) });
+                }
+            }
+
+            // Move pipes and boosts
+            pipes.forEach(pipe => pipe.x -= PIPE_SPEED);
+            boosts.forEach(boost => boost.x -= PIPE_SPEED);
+
+            // Score and boost collection
+            pipes.forEach(pipe => {
+                if (!pipe.passed && pipe.x + PIPE_WIDTH < headsetX) {
+                    pipe.passed = true;
+                    score++;
+                    scoreDisplay.textContent = score;
+                }
+            });
+            boosts = boosts.filter(boost => {
+                if (headsetX + HEADSET_WIDTH > boost.x && headsetX < boost.x + 20 &&
+                    headsetY + HEADSET_HEIGHT > boost.y && headsetY < boost.y + 20) {
+                    activateBoost();
+                    return false;
+                }
+                return boost.x + 20 > 0;
+            });
+
+            // Collision detection
+            pipes.forEach(pipe => {
+                if (
+                    headsetX + HEADSET_WIDTH > pipe.x &&
+                    headsetX < pipe.x + PIPE_WIDTH &&
+                    (headsetY < pipe.topHeight || headsetY + HEADSET_HEIGHT > pipe.bottomY)
+                ) {
+                    endGame();
+                }
+            });
+
+            // Remove off-screen pipes and boosts
+            pipes = pipes.filter(pipe => pipe.x + PIPE_WIDTH > 0);
+            boosts = boosts.filter(boost => boost.x + 20 > 0);
+
+            // Ground/ceiling collision
+            if (headsetY + HEADSET_HEIGHT > CANVAS_HEIGHT || headsetY < 0) {
+                endGame();
+            }
+        }
+
+        function flapHeadset() {
+            if (!gameStarted) {
+                gameStarted = true;
+            }
+            headsetVelocity = boostActive ? JUMP_STRENGTH * 1.3 : JUMP_STRENGTH;
+            gameCanvas.classList.add('flapping');
+            setTimeout(() => gameCanvas.classList.remove('flapping'), 500);
+        }
+
+        function activateBoost() {
+            if (boostTimeout) clearTimeout(boostTimeout);
+            boostActive = true;
+            boostTimeout = setTimeout(() => boostActive = false, BOOST_DURATION);
+        }
+
+        function endGame() {
+            gameRunning = false;
+            backgroundMusic.pause();
+            animateGameOver();
+            updateHighScores();
+            showMessageBox('Game Over!', `Your final score: ${score}`, true);
+            startButton.classList.add('hidden');
+            resetButton.classList.remove('hidden');
+        }
+
+        function animateGameOver() {
+            let opacity = 1;
+            const fadeInterval = setInterval(() => {
+                ctx.globalAlpha = opacity;
+                draw();
+                opacity -= 0.1;
+                if (opacity <= 0) {
+                    clearInterval(fadeInterval);
+                    ctx.globalAlpha = 1;
+                    draw();
+                }
+            }, 100);
+        }
+
+        function updateHighScores() {
+            const date = new Date().toLocaleDateString();
+            highScores.push({ score, date });
+            highScores.sort((a, b) => b.score - a.score);
+            highScores = highScores.slice(0, 5);
+            localStorage.setItem('highScoresFlappyDay3', JSON.stringify(highScores));
+            highScoresBody.innerHTML = '';
+            highScores.forEach((entry, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td>${index + 1}</td><td>${entry.score}</td><td>${entry.date}</td>`;
+                highScoresBody.appendChild(row);
+            });
+        }
+
+        // --- Drawing Functions ---
+        function draw() {
+            ctx.globalAlpha = 1;
+            ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+            // Draw scrolling dark grey tile background
+            ctx.fillStyle = '#4a4a4a'; // EPOS Dark Grey
+            for (let x = tileOffset; x < CANVAS_WIDTH; x += TILE_SIZE) {
+                for (let y = 0; y < CANVAS_HEIGHT; y += TILE_SIZE) {
+                    ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+                }
+            }
+            for (let x = tileOffset - TILE_SIZE; x < CANVAS_WIDTH; x += TILE_SIZE) {
+                for (let y = 0; y < CANVAS_HEIGHT; y += TILE_SIZE) {
+                    ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+                }
+            }
+
+            // Draw ground
+            ctx.fillStyle = '#131313'; // EPOS Black
+            ctx.fillRect(0, CANVAS_HEIGHT - 50, CANVAS_WIDTH, 50);
+
+            // Draw pipes (as audio cables)
+            pipes.forEach(pipe => {
+                ctx.fillStyle = '#00a399'; // EPOS Dark Mint
+                ctx.fillRect(pipe.x, 0, PIPE_WIDTH, pipe.topHeight);
+                ctx.strokeStyle = '#131313';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(pipe.x, 0, PIPE_WIDTH, pipe.topHeight);
+
+                ctx.fillRect(pipe.x, pipe.bottomY, PIPE_WIDTH, CANVAS_HEIGHT - pipe.bottomY - 50);
+                ctx.strokeRect(pipe.x, pipe.bottomY, PIPE_WIDTH, CANVAS_HEIGHT - pipe.bottomY - 50);
+
+                ctx.fillStyle = '#44ead6'; // EPOS Mint
+                ctx.fillRect(pipe.x - 5, pipe.topHeight - 20, PIPE_WIDTH + 10, 20);
+                ctx.fillRect(pipe.x - 5, pipe.bottomY, PIPE_WIDTH + 10, 20);
+            });
+
+            // Draw boosts
+            boosts.forEach(boost => {
+                ctx.fillStyle = '#ff5549'; // EPOS Coral
+                ctx.fillRect(boost.x, boost.y, 20, 20);
+                ctx.strokeStyle = '#131313';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(boost.x, boost.y, 20, 20);
+            });
+
+            // Draw headset
+            ctx.save();
+            ctx.translate(headsetX + HEADSET_WIDTH / 2, headsetY + HEADSET_HEIGHT / 2);
+            ctx.rotate(headsetVelocity * 0.005);
+            ctx.fillStyle = '#ff5549'; // EPOS Coral (headband)
+            ctx.fillRect(-HEADSET_WIDTH / 2, -HEADSET_HEIGHT / 2, HEADSET_WIDTH, HEADSET_HEIGHT);
+            ctx.fillStyle = '#44ead6'; // EPOS Mint (ear cups)
+            ctx.fillRect(-HEADSET_WIDTH / 2 + 5, -HEADSET_HEIGHT / 2 + 5, 10, 15);
+            ctx.fillRect(HEADSET_WIDTH / 2 - 15, -HEADSET_HEIGHT / 2 + 5, 10, 15);
+            ctx.strokeStyle = '#131313';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(-HEADSET_WIDTH / 2, -HEADSET_HEIGHT / 2, HEADSET_WIDTH, HEADSET_HEIGHT);
+            ctx.restore();
+
+            // Draw score
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '16px "Press Start 2P"';
+            ctx.textAlign = 'center';
+            ctx.fillText(`Score: ${score}`, CANVAS_WIDTH / 2, 40);
+        }
+
+        // --- Event Listeners ---
+        document.addEventListener('keydown', e => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                flapHeadset();
+            }
+        });
+
+        gameCanvas.addEventListener('click', flapHeadset);
+        gameCanvas.addEventListener('touchstart', e => {
+            e.preventDefault();
+            flapHeadset();
+        });
+
+        startButton.addEventListener('click', () => {
+            if (gameRunning) {
+                gameRunning = true;
+                startButton.classList.add('hidden');
+                messageBox.classList.add('hidden');
+                highScoresTable.classList.add('hidden');
+                if (!isMuted) backgroundMusic.play();
+                gameLoop();
+            } else {
+                initializeGame();
+            }
+        });
+
+        resetButton.addEventListener('click', () => {
+            resetGame();
+            if (!isMuted) backgroundMusic.play();
+            gameLoop();
+        });
+
+        messageBoxOkBtn.addEventListener('click', () => {
+            messageBox.classList.add('hidden');
+            highScoresTable.classList.add('hidden');
+            if (gameRunning) {
+                gameLoop();
+            }
+        });
+
+        muteButton.addEventListener('click', () => {
+            isMuted = !isMuted;
+            backgroundMusic.muted = isMuted;
+            muteButton.innerHTML = `<i class="fas fa-volume-${isMuted ? 'mute' : 'up'}"></i> ${isMuted ? 'Unmute' : 'Mute'}`;
+        });
+
+        // --- Video Intro Logic ---
+        function showVideoIntro() {
+            videoModal.classList.remove('hidden');
+            videoPlayer.src = 'eposholidays2025.mp4';
+            videoPlayer.play().catch(e => {
+                console.log('Video autoplay failed:', e);
+                videoPlayOverlay.classList.remove('hidden');
+            });
+        }
+
+        function hideVideoIntro() {
+            videoPlayer.pause();
+            videoModal.classList.add('hidden');
+            setTimeout(() => {
+                showMessageBox('Welcome to EPOS Audio Flappy Headset!', 'Click or press SPACE to flap. Collect audio boosts! Avoid the cables! Press Start to begin!');
+            }, 100);
+        }
+
+        videoPlayOverlay.addEventListener('click', () => {
+            videoPlayOverlay.classList.add('hidden');
+            videoPlayer.play();
+        });
+
+        videoPlayer.onended = () => {
+            hideVideoIntro();
+        };
+
+        setTimeout(hideVideoIntro, 10500);
+        showVideoIntro();
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Santa's Sleigh</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tone.js for game sounds -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d1117; /* Darker background */
+            color: #e2e8f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 1rem;
+        }
+
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+            padding: 2rem;
+            border-radius: 1.5rem;
+            background-color: #161b22; /* Slightly lighter background for the container */
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            max-width: 95vw;
+            width: 100%;
+            transition: all 0.3s ease-in-out;
+        }
+
+        @media (min-width: 768px) {
+            .game-container {
+                max-width: 800px;
+            }
+        }
+        
+        .game-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #58a6ff; /* A futuristic blue */
+            text-shadow: 0 0 10px rgba(88, 166, 255, 0.5);
+        }
+
+        .game-ui {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #ffffff;
+            padding: 0 0.5rem;
+        }
+        
+        .game-canvas {
+            border-radius: 1rem;
+            box-shadow: 0 0 20px rgba(88, 166, 255, 0.3);
+            background-color: #0d1117;
+            width: 100%;
+            height: auto;
+            aspect-ratio: 4 / 3;
+        }
+
+        .game-controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem;
+            width: 100%;
+        }
+
+        .control-button {
+            padding: 0.75rem 2rem;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .start-button {
+            background-color: #58a6ff;
+            color: #0d1117;
+        }
+
+        .start-button:hover {
+            background-color: #79c0ff;
+            transform: translateY(-2px);
+        }
+
+        .reset-button {
+            background-color: #f85149;
+            color: #0d1117;
+        }
+
+        .reset-button:hover {
+            background-color: #ff7b72;
+            transform: translateY(-2px);
+        }
+
+        /* Message Box Styling */
+        .message-box {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(22, 27, 34, 0.95);
+            border: 2px solid #58a6ff;
+            border-radius: 1rem;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            display: none;
+        }
+        .message-box h2 {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #58a6ff;
+            margin-bottom: 1rem;
+        }
+        .message-box p {
+            font-size: 1.1rem;
+            color: #ffffff;
+        }
+        .message-box button {
+            background-color: #58a6ff;
+            color: #0d1117;
+            margin-top: 1.5rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* SVG for the sleigh */
+        .sleigh-svg {
+            fill: #c9d1d9; /* Lighter color */
+            stroke: #58a6ff;
+            stroke-width: 2;
+            transform-origin: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1 class="game-title">Santa's Sleigh</h1>
+        <div class="game-ui">
+            <span id="score-display">Presents Delivered: 0</span>
+            <span id="lives-display">Sleigh Health: 3</span>
+        </div>
+        <canvas id="gameCanvas" class="game-canvas"></canvas>
+        <div class="game-controls">
+            <button id="startButton" class="control-button start-button">Start Game</button>
+            <button id="resetButton" class="control-button reset-button">Reset</button>
+        </div>
+        
+        <!-- Message Box for game notifications -->
+        <div id="messageBox" class="message-box">
+            <h2 id="messageHeading"></h2>
+            <p id="messageText"></p>
+            <button id="messageButton">OK</button>
+        </div>
+    </div>
+
+    <script>
+        window.onload = function() {
+            // --- Game Constants and Initialization ---
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+            const scoreDisplay = document.getElementById('score-display');
+            const livesDisplay = document.getElementById('lives-display');
+            const startButton = document.getElementById('startButton');
+            const resetButton = document.getElementById('resetButton');
+            const messageBox = document.getElementById('messageBox');
+            const messageHeading = document.getElementById('messageHeading');
+            const messageText = document.getElementById('messageText');
+            const messageButton = document.getElementById('messageButton');
+            
+            // --- Game State Variables ---
+            let gameState = 'menu'; // 'menu', 'playing', 'gameOver'
+            let score = 0;
+            let lives = 3;
+            // Adjusted game speed to be very, very slow
+            let gameSpeed = 0.02; 
+            let lastPresentTime = 0;
+            // Increased the time between present spawns
+            let presentSpawnInterval = 3000; // milliseconds
+            let scoreForNextSpeedIncrease = 1000;
+            
+            let presents = [];
+            let snowballs = [];
+
+            let shootSound, explosionSound, hitSound, levelUpSound;
+
+            // --- Game Sounds using Tone.js ---
+            function setupAudio() {
+                // Sound for shooting a snowball
+                shootSound = new Tone.Synth({
+                    oscillator: { type: 'square' },
+                    envelope: { attack: 0.01, decay: 0.05, sustain: 0, release: 0.1 }
+                }).toDestination();
+                // Sound for a present being 'caught'
+                explosionSound = new Tone.NoiseSynth({
+                    noise: { type: 'white' },
+                    envelope: { attack: 0.005, decay: 0.1, sustain: 0, release: 0.1 }
+                }).toDestination();
+                // Sound for sleigh getting hit
+                hitSound = new Tone.PolySynth(Tone.Synth, {
+                    oscillator: { type: 'sawtooth' }
+                }).toDestination();
+                // Sound for leveling up
+                levelUpSound = new Tone.PolySynth(Tone.Synth, {
+                    oscillator: { type: 'triangle' },
+                    envelope: { attack: 0.05, decay: 0.2, sustain: 0, release: 0.3 }
+                }).toDestination();
+            }
+
+            function playShootSound() { if (shootSound) shootSound.triggerAttackRelease("C4", "8n"); }
+            function playExplosionSound() { if (explosionSound) explosionSound.triggerAttackRelease("4n"); }
+            function playHitSound() { if (hitSound) hitSound.triggerAttackRelease(["C2", "G#1"], "8n"); }
+            function playLevelUpSound() { if (levelUpSound) levelUpSound.triggerAttackRelease(["C6", "E6", "G6"], "8n"); }
+
+            // --- Game Entities Classes ---
+            class Sleigh {
+                constructor() {
+                    this.width = 70;
+                    this.height = 40;
+                    // The runners extend 10 pixels below the main sleigh body
+                    this.runnerHeight = 10;
+                    this.x = 0;
+                    this.y = 0; 
+                    // Sleigh movement speed has been increased to 8 pixels per update
+                    this.speed = 16;
+                    this.updatePosition(); // Initial position calculation
+                }
+                
+                // Method to update the sleigh's position based on canvas size
+                updatePosition() {
+                    this.y = canvas.height - (this.height + this.runnerHeight);
+                    this.x = (canvas.width / 2) - (this.width / 2);
+                }
+
+                draw() {
+                    // Draw sleigh shape
+                    ctx.fillStyle = '#ff4d4f'; // Red for Santa's Sleigh
+                    ctx.beginPath();
+                    ctx.moveTo(this.x, this.y + this.height * 0.7);
+                    ctx.lineTo(this.x, this.y + this.height);
+                    ctx.lineTo(this.x + this.width, this.y + this.height);
+                    ctx.lineTo(this.x + this.width, this.y + this.height * 0.7);
+                    ctx.lineTo(this.x + this.width * 0.8, this.y);
+                    ctx.lineTo(this.x + this.width * 0.2, this.y);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    // Draw runners
+                    ctx.strokeStyle = '#c9d1d9';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(this.x, this.y + this.height);
+                    ctx.lineTo(this.x + this.width * 0.3, this.y + this.height + this.runnerHeight);
+                    ctx.moveTo(this.x + this.width * 0.7, this.y + this.height);
+                    ctx.lineTo(this.x + this.width, this.y + this.height + this.runnerHeight);
+                    ctx.stroke();
+                }
+
+                update(direction) {
+                    this.x += direction * this.speed;
+                    // Keep sleigh within canvas bounds
+                    if (this.x < 0) this.x = 0;
+                    if (this.x + this.width > canvas.width) this.x = canvas.width - this.width;
+                }
+            }
+
+            class Present {
+                constructor() {
+                    // Increased the size of presents
+                    this.size = Math.random() * 30 + 30;
+                    this.x = Math.random() * (canvas.width - this.size);
+                    this.y = -this.size - Math.random() * 50; // Added random starting y position
+                    // Adjusted speed to be much slower and with less variance
+                    this.speedY = gameSpeed + Math.random() * 0.1; 
+                }
+
+                draw() {
+                    ctx.fillStyle = '#52c41a'; // Green for presents
+                    ctx.fillRect(this.x, this.y, this.size, this.size);
+                    ctx.fillStyle = '#ff4d4f'; // Red ribbon
+                    ctx.fillRect(this.x + this.size / 2 - 2, this.y, 4, this.size);
+                    ctx.fillRect(this.x, this.y + this.size / 2 - 2, this.size, 4);
+                }
+
+                update() {
+                    this.y += this.speedY;
+                }
+            }
+
+            class Snowball {
+                constructor(x, y) {
+                    this.x = x;
+                    this.y = y;
+                    this.radius = 5;
+                    // Adjusted speed to be a bit slower to emphasize the laser trail
+                    this.speedY = -1; 
+                }
+
+                draw() {
+                    // Draw a long, semi-transparent vertical laser trail
+                    const trailLength = 50;
+                    const trailWidth = 4;
+                    const gradient = ctx.createLinearGradient(this.x, this.y, this.x, this.y + trailLength);
+                    gradient.addColorStop(0, 'rgba(139, 233, 253, 1)'); // Brightest at the top
+                    gradient.addColorStop(1, 'rgba(139, 233, 253, 0)'); // Fades to transparent at the bottom
+                    
+                    ctx.fillStyle = gradient;
+                    ctx.fillRect(this.x - trailWidth / 2, this.y, trailWidth, trailLength);
+
+                    // Draw a bright, solid circle at the very tip of the laser
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fill();
+                }
+
+                update() {
+                    this.y += this.speedY;
+                }
+            }
+
+            const sleigh = new Sleigh();
+            
+            // --- Game Functions ---
+            
+            function updateUI() {
+                scoreDisplay.innerText = `Presents Delivered: ${score}`;
+                livesDisplay.innerText = `Sleigh Health: ${lives}`;
+            }
+
+            function showMessage(heading, text, buttonText, onButtonClick) {
+                messageHeading.innerText = heading;
+                messageText.innerText = text;
+                messageButton.innerText = buttonText;
+                messageButton.onclick = () => {
+                    messageBox.style.display = 'none';
+                    if (onButtonClick) {
+                        onButtonClick();
+                    }
+                };
+                messageBox.style.display = 'block';
+            }
+
+            function resetGame() {
+                score = 0;
+                lives = 3;
+                presents = [];
+                snowballs = [];
+                gameSpeed = 0.02; // Reset speed
+                presentSpawnInterval = 3000;
+                scoreForNextSpeedIncrease = 1000;
+                sleigh.updatePosition(); // Reset sleigh position to bottom
+                updateUI();
+                startButton.disabled = false;
+            }
+
+            function gameOver() {
+                gameState = 'gameOver';
+                playHitSound();
+                showMessage("Game Over", `The sleigh was hit! Presents Delivered: ${score}`, "Try Again?", resetGame);
+            }
+            
+            // Generate a new present
+            function generatePresent() {
+                presents.push(new Present());
+            }
+
+            function checkCollisions() {
+                // Snowball-Present collision
+                for (let i = snowballs.length - 1; i >= 0; i--) {
+                    const s = snowballs[i];
+                    for (let j = presents.length - 1; j >= 0; j--) {
+                        const p = presents[j];
+                        // Check for overlap between snowball and present
+                        // Note: Using the snowball's radius for the collision check
+                        const dx = s.x - (p.x + p.size / 2);
+                        const dy = s.y - (p.y + p.size / 2);
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        if (distance < s.radius + p.size / 2) {
+                            score += 100;
+                            playExplosionSound();
+                            snowballs.splice(i, 1);
+                            presents.splice(j, 1);
+                            break;
+                        }
+                    }
+                }
+
+                // Sleigh-Present collision
+                for (let i = presents.length - 1; i >= 0; i--) {
+                    const p = presents[i];
+                    // Updated collision check to use the sleigh's correct y position
+                    if (sleigh.x < p.x + p.size && sleigh.x + sleigh.width > p.x &&
+                        sleigh.y + sleigh.runnerHeight < p.y + p.size && sleigh.y + sleigh.height + sleigh.runnerHeight > p.y) {
+                        playHitSound();
+                        lives--;
+                        presents.splice(i, 1);
+                        if (lives <= 0) {
+                            gameOver();
+                        }
+                    }
+                }
+            }
+
+            function gameLoop(currentTime) {
+                if (gameState !== 'playing') return;
+
+                // --- DIFFICULTY INCREASE ---
+                // Increase speed and decrease spawn interval at score milestones
+                if (score >= scoreForNextSpeedIncrease) {
+                    gameSpeed += 0.01; // A smaller increase in speed
+                    presentSpawnInterval = Math.max(1000, presentSpawnInterval - 100); // Don't go below 1000ms and decrease less
+                    scoreForNextSpeedIncrease += 1000;
+                    playLevelUpSound();
+                }
+
+                // Clear canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Update and draw snowballs
+                snowballs.forEach(s => {
+                    s.update();
+                    s.draw();
+                });
+                // Remove snowballs that have flown off the top of the screen
+                snowballs = snowballs.filter(s => s.y + s.radius > 0);
+
+                // Update and draw presents
+                presents.forEach(p => {
+                    p.update();
+                    p.draw();
+                });
+                presents = presents.filter(p => p.y < canvas.height);
+                
+                // Draw sleigh
+                sleigh.draw();
+
+                // Generate new objects
+                if (currentTime - lastPresentTime > presentSpawnInterval) {
+                    generatePresent();
+                    lastPresentTime = currentTime;
+                }
+
+                // Check collisions
+                checkCollisions();
+                updateUI();
+                
+                requestAnimationFrame(gameLoop);
+            }
+
+            // --- Event Listeners and Game Flow ---
+            function handleResize() {
+                const gameContainer = document.querySelector('.game-container');
+                const newWidth = gameContainer.offsetWidth - 64;
+                const newHeight = newWidth * 0.75; // Maintain aspect ratio
+                
+                canvas.width = newWidth;
+                canvas.height = newHeight;
+
+                // Update the sleigh's position whenever the canvas size changes
+                sleigh.updatePosition();
+            }
+
+            let keys = {};
+            window.addEventListener('keydown', (e) => {
+                keys[e.key] = true;
+            });
+            window.addEventListener('keyup', (e) => {
+                keys[e.key] = false;
+            });
+
+            function handleInput() {
+                if (gameState !== 'playing') return;
+                
+                if (keys['ArrowLeft']) {
+                    sleigh.update(-1);
+                }
+                if (keys['ArrowRight']) {
+                    sleigh.update(1);
+                }
+                if (keys[' ']) {
+                    // Throw a snowball
+                    snowballs.push(new Snowball(sleigh.x + sleigh.width / 2, sleigh.y));
+                    playShootSound();
+                    keys[' '] = false; // Prevents continuous firing on key hold
+                }
+            }
+
+            function gameCycle(timestamp) {
+                handleInput();
+                gameLoop(timestamp);
+                requestAnimationFrame(gameCycle);
+            }
+            
+            startButton.addEventListener('click', async () => {
+                if (gameState === 'menu') {
+                    gameState = 'playing';
+                    // Start the AudioContext with a user gesture
+                    await Tone.start();
+                    setupAudio();
+                    resetGame();
+                    startButton.disabled = true;
+                    requestAnimationFrame(gameCycle); // Start the main game loop
+                }
+            });
+            
+            resetButton.addEventListener('click', () => {
+                if (gameState !== 'menu') {
+                    resetGame();
+                    showMessage("Game Reset", "Press Start to play again.", "OK", () => {
+                        startButton.disabled = false;
+                    });
+                }
+            });
+            
+            // Initial setup
+            handleResize();
+            window.addEventListener('resize', handleResize);
+            
+            showMessage(
+                "Santa's Sleigh", 
+                "Use the Arrow Keys to move left and right. Press Spacebar to throw snowballs and deliver presents!", 
+                "Start Game", 
+                () => {
+                    startButton.disabled = false;
+                }
+            );
+            updateUI();
+        };
+    </script>
+</body>
+</html>

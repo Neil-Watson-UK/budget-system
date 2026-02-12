@@ -1,0 +1,30 @@
+{
+    "referenceCode": "PN4K1D",
+    "subjectLine": "",
+    "preheaderText": "",
+    "backgroundImage": "",
+    "logoUrl": "https:\/\/eposaudioevents.com\/emailtemplates\/uploads\/img_683f0affc30f2.png",
+    "senderName": "",
+    "senderEmail": "",
+    "senderMobile": "",
+    "personalizationType": "none",
+    "region": "NORD",
+    "audience": "channel",
+    "emailFrom": "",
+    "sendTime": "",
+    "articleBlocks": [
+        {
+            "position": 1,
+            "type": "sign_off"
+        }
+    ],
+    "articles": {
+        "1": {
+            "type": "sign_off",
+            "content": "<p>Kind regards,<\/p>",
+            "contentAlignment": "left",
+            "backgroundColor": "#ffffff"
+        }
+    },
+    "createdBy": "Neil"
+}

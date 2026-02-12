@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snowballs: The Asteroid Blaster</title>
+    <!-- Tailwind CSS for a clean UI -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js library for 3D rendering -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d1117;
+            color: #c9d1d9;
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        #gameCanvas {
+            display: block;
+        }
+
+        .ui-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1rem;
+            box-sizing: border-box;
+        }
+
+        .game-title {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #58a6ff;
+            text-shadow: 0 0 10px rgba(88, 166, 255, 0.5);
+            margin-bottom: 1rem;
+        }
+
+        .score-display {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-size: 1.5rem;
+            font-weight: bold;
+            background-color: rgba(45, 55, 72, 0.7);
+            padding: 0.5rem 1rem;
+            border-radius: 0.75rem;
+        }
+        
+        /* Message Box Styling */
+        .message-box {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(26, 32, 44, 0.95);
+            border: 2px solid #58a6ff;
+            border-radius: 1rem;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            display: none;
+            pointer-events: all;
+        }
+        .message-box h2 {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #58a6ff;
+            margin-bottom: 1rem;
+        }
+        .message-box p {
+            font-size: 1.1rem;
+            color: #ffffff;
+            line-height: 1.5;
+        }
+        .message-box button {
+            background-color: #58a6ff;
+            color: #1a202c;
+            margin-top: 1.5rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+        .message-box button:hover {
+            background-color: #79c0ff;
+        }
+
+        .controls-info {
+            position: absolute;
+            bottom: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.9rem;
+            text-align: center;
+            color: #a0aec0;
+            pointer-events: none;
+            background-color: rgba(45, 55, 72, 0.7);
+            padding: 0.5rem 1rem;
+            border-radius: 0.75rem;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <div class="ui-container">
+        <div class="score-display">Score: <span id="score">0</span></div>
+        
+        <!-- Message Box for game notifications -->
+        <div id="messageBox" class="message-box">
+            <h2 id="messageHeading"></h2>
+            <p id="messageText"></p>
+            <button id="messageButton">OK</button>
+        </div>
+        
+        <div class="controls-info">
+            Controls: Arrow Keys or A/D to move left/right, W/S or Up/Down Arrow to move forward/back, Space to blast.
+        </div>
+    </div>
+
+    <script>
+        window.onload = function() {
+            // --- Game State and DOM Elements ---
+            const scoreDisplay = document.getElementById('score');
+            const messageBox = document.getElementById('messageBox');
+            const messageHeading = document.getElementById('messageHeading');
+            const messageText = document.getElementById('messageText');
+            const messageButton = document.getElementById('messageButton');
+            const canvas = document.getElementById('gameCanvas');
+
+            let isPlaying = false;
+            let score = 0;
+            let ship;
+            let bullets = [];
+            let asteroids = []; // All obstacles are now in one array
+            let snowflakes = [];
+            let lastBulletTime = 0;
+            let asteroidInterval;
+            let gameSpeed = 1.0;
+
+            // --- Three.js Setup ---
+            let scene, camera, renderer;
+            let controls = { left: false, right: false, forward: false, backward: false, shoot: false };
+
+            function init() {
+                // Scene setup
+                scene = new THREE.Scene();
+                scene.background = new THREE.Color(0x0d1117);
+
+                // Camera setup
+                camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                camera.position.z = 8;
+
+                // Renderer setup
+                renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.setPixelRatio(window.devicePixelRatio);
+                document.body.appendChild(renderer.domElement);
+
+                // Lighting
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+                scene.add(ambientLight);
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+                directionalLight.position.set(0, 5, 5);
+                scene.add(directionalLight);
+
+                // Player Ship
+                const shipGeometry = new THREE.ConeGeometry(0.5, 1, 8); 
+                const shipMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xff4d4d, emissiveIntensity: 2.0 }); 
+                ship = new THREE.Mesh(shipGeometry, shipMaterial);
+                
+                ship.name = 'ship';
+                ship.rotation.x = Math.PI;
+                ship.position.y = -5;
+                ship.position.z = 0;
+                scene.add(ship);
+
+                // Starfield background
+                const starGeometry = new THREE.BufferGeometry();
+                const starVertices = [];
+                for (let i = 0; i < 10000; i++) {
+                    const x = THREE.MathUtils.randFloatSpread(200);
+                    const y = THREE.MathUtils.randFloatSpread(200);
+                    const z = THREE.MathUtils.randFloatSpread(200);
+                    starVertices.push(x, y, z);
+                }
+                starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));
+                const starMaterial = new THREE.PointsMaterial({ color: 0xc9d1d9, size: 0.1 });
+                const stars = new THREE.Points(starGeometry, starMaterial);
+                
+                stars.name = 'stars';
+                scene.add(stars);
+
+                // Event Listeners for player input
+                window.addEventListener('keydown', onKeyDown);
+                window.addEventListener('keyup', onKeyUp);
+                window.addEventListener('resize', onWindowResize);
+            }
+
+            // --- Game Logic Functions ---
+            
+            // The main game loop function
+            function animate() {
+                requestAnimationFrame(animate);
+                
+                if (isPlaying) {
+                    updateGame();
+                }
+                
+                renderer.render(scene, camera);
+            }
+
+            function onWindowResize() {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+
+            function onKeyDown(event) {
+                if (!isPlaying) return;
+                switch (event.key) {
+                    case 'ArrowLeft':
+                    case 'a':
+                        controls.left = true;
+                        break;
+                    case 'ArrowRight':
+                    case 'd':
+                        controls.right = true;
+                        break;
+                    case 'ArrowUp':
+                    case 'w':
+                        controls.forward = true;
+                        break;
+                    case 'ArrowDown':
+                    case 's':
+                        controls.backward = true;
+                        break;
+                    case ' ':
+                        controls.shoot = true;
+                        break;
+                }
+            }
+
+            function onKeyUp(event) {
+                if (!isPlaying) return;
+                switch (event.key) {
+                    case 'ArrowLeft':
+                    case 'a':
+                        controls.left = false;
+                        break;
+                    case 'ArrowRight':
+                    case 'd':
+                        controls.right = false;
+                        break;
+                    case 'ArrowUp':
+                    case 'w':
+                        controls.forward = false;
+                        break;
+                    case 'ArrowDown':
+                    case 's':
+                        controls.backward = false;
+                        break;
+                    case ' ':
+                        controls.shoot = false;
+                        break;
+                }
+            }
+            
+            // Creates a new asteroid, can be either a blastaable or icy one
+            function createAsteroid() {
+                const isIcy = Math.random() < 0.2; // 20% chance of creating an icy asteroid
+                const asteroidRadius = THREE.MathUtils.randFloat(0.8, 1.8);
+                const asteroidGeometry = new THREE.SphereGeometry(1, 16, 16);
+                
+                let asteroidMaterial;
+                if (isIcy) {
+                    // Icy blue asteroid to be avoided
+                    asteroidMaterial = new THREE.MeshStandardMaterial({ color: 0x58a6ff, emissive: 0x58a6ff, emissiveIntensity: 2.0 });
+                } else {
+                    // Regular asteroid to be blasted
+                    asteroidMaterial = new THREE.MeshStandardMaterial({ color: 0xe0e0e0, emissive: 0xe0e0e0, emissiveIntensity: 2.0 });
+                }
+
+                const asteroid = new THREE.Mesh(asteroidGeometry, asteroidMaterial);
+                
+                asteroid.scale.set(asteroidRadius, asteroidRadius, asteroidRadius);
+                asteroid.isIcy = isIcy; // Add a property to distinguish the types
+                asteroid.radius = asteroidRadius; // Store the actual radius for collision detection
+
+                const x = THREE.MathUtils.randFloatSpread(15);
+                const y = THREE.MathUtils.randFloat(10, 20);
+                const z = THREE.MathUtils.randFloatSpread(10);
+                asteroid.position.set(x, y, z);
+                
+                // Base speed for the asteroid
+                let baseSpeed = isIcy ? 0.04 : 0.02; // Icy asteroids move faster
+                asteroid.fallSpeed = baseSpeed * gameSpeed; // Scale speed with game difficulty
+                
+                asteroid.rotationSpeed = new THREE.Vector3(
+                    THREE.MathUtils.randFloat(-0.01, 0.01),
+                    THREE.MathUtils.randFloat(-0.01, 0.01),
+                    THREE.MathUtils.randFloat(-0.01, 0.01)
+                );
+                
+                scene.add(asteroid);
+                asteroids.push(asteroid);
+            }
+
+            function createBullet() {
+                const bulletGeometry = new THREE.SphereGeometry(0.1, 8, 8);
+                const bulletMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+                const bullet = new THREE.Mesh(bulletGeometry, bulletMaterial);
+                
+                bullet.position.copy(ship.position);
+                
+                scene.add(bullet);
+                bullets.push(bullet);
+            }
+
+            function createSnowflakes(position) {
+                const snowflakeCount = THREE.MathUtils.randInt(5, 10);
+                for (let i = 0; i < snowflakeCount; i++) {
+                    const snowflakeGeometry = new THREE.SphereGeometry(THREE.MathUtils.randFloat(0.05, 0.2), 8, 8);
+                    const snowflakeMaterial = new THREE.MeshBasicMaterial({ 
+                        color: 0xffffff,
+                        transparent: true,
+                        opacity: 1.0
+                    });
+                    const snowflake = new THREE.Mesh(snowflakeGeometry, snowflakeMaterial);
+
+                    snowflake.position.copy(position);
+
+                    const velocity = new THREE.Vector3(
+                        THREE.MathUtils.randFloatSpread(0.2),
+                        THREE.MathUtils.randFloat(-0.2, 0.0),
+                        THREE.MathUtils.randFloatSpread(0.2)
+                    );
+                    snowflake.velocity = velocity;
+                    snowflake.lifetime = 120;
+
+                    scene.add(snowflake);
+                    snowflakes.push(snowflake);
+                }
+            }
+
+            function updateGame() {
+                // Increase game speed over time
+                gameSpeed += 0.0001;
+
+                // Move the ship based on controls
+                if (controls.left && ship.position.x > -8) {
+                    ship.position.x -= 0.1;
+                }
+                if (controls.right && ship.position.x < 8) {
+                    ship.position.x += 0.1;
+                }
+                if (controls.forward && ship.position.z > -4) {
+                    ship.position.z -= 0.1;
+                }
+                if (controls.backward && ship.position.z < 4) {
+                    ship.position.z += 0.1;
+                }
+
+                // Handle shooting
+                const currentTime = Date.now();
+                if (controls.shoot && currentTime - lastBulletTime > 200) {
+                    createBullet();
+                    lastBulletTime = currentTime;
+                }
+
+                // Move bullets
+                for (let i = bullets.length - 1; i >= 0; i--) {
+                    const bullet = bullets[i];
+                    bullet.position.y += 0.6;
+                }
+
+                // Move asteroids
+                for (let i = asteroids.length - 1; i >= 0; i--) {
+                    const asteroid = asteroids[i];
+                    asteroid.position.y -= asteroid.fallSpeed; 
+                    asteroid.rotation.x += asteroid.rotationSpeed.x;
+                    asteroid.rotation.y += asteroid.rotationSpeed.y;
+                }
+                
+                // Update snowflakes
+                snowflakes.forEach((snowflake, index) => {
+                    snowflake.position.add(snowflake.velocity);
+                    snowflake.material.opacity -= 1/snowflake.lifetime;
+                    
+                    if (snowflake.lifetime-- <= 0) {
+                        scene.remove(snowflake);
+                        snowflakes.splice(index, 1);
+                    }
+                });
+
+                // Collision detection and removal
+                const bulletsToRemove = [];
+                const asteroidsToRemove = [];
+
+                // Check ship collision first
+                for (let i = asteroids.length - 1; i >= 0; i--) {
+                    const asteroid = asteroids[i];
+                    const shipRadius = 0.5;
+                    const asteroidRadius = asteroid.radius;
+                    const distance = ship.position.distanceTo(asteroid.position);
+
+                    if (distance < (shipRadius + asteroidRadius)) {
+                        gameOver();
+                        return;
+                    }
+                }
+
+                // Check bullet-asteroid collisions
+                for (let i = bullets.length - 1; i >= 0; i--) {
+                    const bullet = bullets[i];
+                    
+                    if (bullet.position.y > 10) {
+                        bulletsToRemove.push(i);
+                        continue;
+                    }
+
+                    for (let j = asteroids.length - 1; j >= 0; j--) {
+                        const asteroid = asteroids[j];
+                        
+                        // Skip if asteroid is already marked for removal
+                        if (asteroidsToRemove.includes(j)) continue;
+
+                        const bulletRadius = 0.1;
+                        const asteroidRadius = asteroid.radius;
+
+                        const distance = bullet.position.distanceTo(asteroid.position);
+
+                        if (distance < (bulletRadius + asteroidRadius)) {
+                            // Collision detected!
+                            if (asteroid.isIcy) {
+                                // Bullets have no effect on icy asteroids, but the bullet is still removed.
+                                bulletsToRemove.push(i);
+                            } else {
+                                // Regular asteroid, blast it!
+                                createSnowflakes(asteroid.position);
+                                bulletsToRemove.push(i);
+                                asteroidsToRemove.push(j);
+                                score += 10;
+                                scoreDisplay.innerText = score;
+                            }
+                            // A collision occurred, no need to check this bullet against other asteroids.
+                            break; 
+                        }
+                    }
+                }
+
+                // Remove objects from the scene and arrays
+                bulletsToRemove.forEach(index => {
+                    if (bullets[index]) {
+                        scene.remove(bullets[index]);
+                    }
+                });
+                asteroidsToRemove.forEach(index => {
+                    if (asteroids[index]) {
+                        scene.remove(asteroids[index]);
+                    }
+                });
+                
+                // Filter the arrays after the loop to remove objects
+                if (bulletsToRemove.length > 0) {
+                    bullets = bullets.filter((_, index) => !bulletsToRemove.includes(index));
+                }
+                if (asteroidsToRemove.length > 0) {
+                    asteroids = asteroids.filter((_, index) => !asteroidsToRemove.includes(index));
+                }
+
+            }
+
+            // Game over function
+            function gameOver() {
+                isPlaying = false;
+                clearInterval(asteroidInterval);
+                showMessage(
+                    "Game Over!",
+                    `Your final score is: ${score}.`,
+                    "Play Again",
+                    startGame
+                );
+            }
+
+            // Starts the game
+            function startGame() {
+                score = 0;
+                scoreDisplay.innerText = score;
+                bullets = [];
+                asteroids = [];
+                snowflakes = [];
+                gameSpeed = 1.0;
+                
+                let objectsToRemove = [];
+                scene.children.forEach(child => {
+                    if (child.name !== 'ship' && child.name !== 'stars') {
+                        objectsToRemove.push(child);
+                    }
+                });
+                objectsToRemove.forEach(child => scene.remove(child));
+
+                isPlaying = true;
+                
+                asteroidInterval = setInterval(() => {
+                    if (isPlaying) {
+                        createAsteroid();
+                    }
+                }, 2000);
+                
+                animate(); 
+            }
+
+            // Helper function to show a message box
+            function showMessage(heading, text, buttonText, onButtonClick) {
+                messageHeading.innerText = heading;
+                messageText.innerText = text;
+                messageButton.innerText = buttonText;
+                messageButton.onclick = () => {
+                    messageBox.style.display = 'none';
+                    if (onButtonClick) onButtonClick();
+                };
+                messageBox.style.display = 'block';
+            }
+
+            init();
+            showMessage(
+                "Snowballs: The Asteroid Blaster",
+                "Your mission: blast the white asteroids into snowflakes and avoid the icy blue ones! The game gets faster the longer you survive.",
+                "Start Game",
+                startGame
+            );
+        };
+    </script>
+</body>
+</html>

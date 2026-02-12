@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EPOS Holiday Harmony Quest</title>
+    <!-- Tailwind CSS CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #00353d; /* EPOS Dark Petrol */
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+        .game-container {
+            background-color: #131313; /* Dark background for game area */
+            border-radius: 20px;
+            padding: 3rem;
+            max-width: 900px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            animation: fadeIn 1s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .game-button {
+            background-color: #ff5549; /* EPOS Coral */
+            color: #ffffff;
+            font-weight: bold;
+            padding: 0.75rem 2rem;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 85, 73, 0.4);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: none;
+        }
+        .game-button:hover {
+            background-color: #ff7065;
+            box-shadow: 0 6px 20px rgba(255, 85, 73, 0.6);
+            transform: translateY(-2px);
+        }
+        .input-field {
+            background-color: #1a1a1a;
+            color: #ffffff;
+            border: 2px solid #333;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            width: 100%;
+            max-width: 300px;
+            text-align: center;
+            transition: border-color 0.3s ease;
+        }
+        .input-field:focus {
+            outline: none;
+            border-color: #ff5549;
+        }
+        .superpower-card {
+            background-color: #2a2a2a;
+            border-radius: 15px;
+            padding: 2rem 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 3px solid transparent;
+            min-height: 250px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .superpower-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+        .superpower-card.selected {
+            border-color: #ff5549;
+            transform: scale(1.05);
+            box-shadow: 0 8px 30px rgba(255, 85, 73, 0.5);
+        }
+        .superpower-card i {
+            font-size: 3rem;
+            color: #A7D9D3;
+            margin-bottom: 1rem;
+        }
+        .superpower-card.selected i {
+            color: #ff5549;
+        }
+        .quest-card {
+            background-color: #2a2a2a;
+            border-radius: 10px;
+            padding: 1.5rem 1rem;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+        .quest-card:not(.locked):hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+        }
+        .quest-card.locked {
+            background-color: #1a1a1a;
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+        .quest-card.unlocked {
+            cursor: pointer;
+        }
+        .quest-card.current-day {
+            border: 3px solid #ff5549;
+            box-shadow: 0 0 20px #ff5549;
+        }
+        .quest-card h3 {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        .quest-card p {
+            font-size: 0.8rem;
+            color: #b0b0b0;
+        }
+        .hidden {
+            display: none !important;
+        }
+        .message-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(19, 19, 19, 0.95);
+            border: 2px solid #ff5549;
+            border-radius: 1rem;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            display: none;
+            max-width: 90%;
+            width: 400px;
+        }
+        .message-box h2 {
+            font-size: 1.5rem;
+            color: #ff5549;
+            margin-bottom: 1rem;
+        }
+        .message-box p {
+            font-size: 1rem;
+            color: #ffffff;
+            line-height: 1.5;
+        }
+        .message-box button {
+            background-color: #ff5549;
+            color: #1a202c;
+            margin-top: 1.5rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            border: none;
+        }
+        .message-box button:hover {
+            background-color: #ff7065;
+        }
+        .leaderboard-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .leaderboard-table th, .leaderboard-table td {
+            padding: 1rem;
+            border-bottom: 1px solid #333;
+        }
+        .leaderboard-table th {
+            text-align: left;
+            font-size: 1rem;
+            color: #A7D9D3;
+        }
+        .leaderboard-table td {
+            text-align: left;
+            font-size: 1rem;
+        }
+        .leaderboard-table tr:last-child td {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white">
+
+    <div class="game-container">
+        
+        <!-- === 1. Intro Screen === -->
+        <div id="introScreen">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4">EPOS Holiday Harmony Quest</h1>
+            <p class="text-lg mb-8 max-w-lg mx-auto">
+                Welcome, adventurer! This holiday season, we need your help to bring harmony back to the digital world.
+                Are you ready to embark on this 15-day quest?
+            </p>
+            <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 justify-center items-center">
+                <button id="startQuestButton" class="game-button">
+                    <i class="fas fa-play"></i> Start Your Quest
+                </button>
+                <button id="viewLeaderboardButton" class="game-button bg-gray-600 hover:bg-gray-500">
+                    <i class="fas fa-trophy"></i> View Leaderboard
+                </button>
+            </div>
+        </div>
+
+        <!-- === 2. Name & Superpower Selection Screen === -->
+        <div id="nameSuperpowerScreen" class="hidden">
+            <h2 class="text-3xl md:text-4xl font-bold mb-6">Choose Your Identity</h2>
+            
+            <!-- Player Name Section -->
+            <div class="mb-8">
+                <label for="playerNameInput" class="block text-xl font-semibold mb-3">Your Name</label>
+                <div class="flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-4">
+                    <input type="text" id="playerNameInput" placeholder="Enter your name" class="input-field grow">
+                    <button id="generateNameButton" class="game-button">
+                        <i class="fas fa-magic"></i> Generate Random Name
+                    </button>
+                </div>
+            </div>
+
+            <!-- Superpower Selection Section -->
+            <div class="mb-8">
+                <p class="text-lg mb-4">Select your superpower to guide you on your journey:</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- IMPACT Card -->
+                    <div id="impactCard" class="superpower-card" data-superpower="IMPACT">
+                        <i class="fas fa-fist-raised"></i>
+                        <h3 class="text-xl font-bold">IMPACT</h3>
+                        <p class="text-sm mt-2 text-gray-400">Achieve victory with powerful solutions and decisive action.</p>
+                    </div>
+                    <!-- EXPAND Card -->
+                    <div id="expandCard" class="superpower-card" data-superpower="EXPAND">
+                        <i class="fas fa-arrows-alt"></i>
+                        <h3 class="text-xl font-bold">EXPAND</h3>
+                        <p class="text-sm mt-2 text-gray-400">Broaden your reach and explore new possibilities for success.</p>
+                    </div>
+                    <!-- ADAPT Card -->
+                    <div id="adaptCard" class="superpower-card" data-superpower="ADAPT">
+                        <i class="fas fa-hand-sparkles"></i>
+                        <h3 class="text-xl font-bold">ADAPT</h3>
+                        <p class="text-sm mt-2 text-gray-400">Overcome any challenge with seamless flexibility.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <button id="startChallengeButton" class="game-button mt-4">
+                <i class="fas fa-rocket"></i> Embark on the Quest!
+            </button>
+        </div>
+
+        <!-- === 3. Quest Map Screen === -->
+        <div id="questMapScreen" class="hidden">
+            <h2 class="text-3xl md:text-4xl font-bold mb-4">The 15-Day Quest</h2>
+            <p class="text-lg mb-6">Welcome, <span id="playerNameDisplay" class="font-bold text-coral"></span>! Your superpower is <span id="playerSuperpowerDisplay" class="font-bold text-epos-mint"></span>.</p>
+            <p class="text-md mb-8 max-w-lg mx-auto text-gray-400">
+                You have 15 challenges ahead of you. Complete each day's challenge to bring harmony to the digital world.
+            </p>
+
+            <div id="questGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+                <!-- Challenge cards will be generated here by JavaScript -->
+            </div>
+            
+            <button id="backToMenuButton" class="game-button bg-gray-600 hover:bg-gray-500 mt-8">
+                <i class="fas fa-home"></i> Back to Menu
+            </button>
+        </div>
+
+        <!-- === 4. Challenge Complete Screen (New) === -->
+        <div id="challengeCompleteScreen" class="hidden">
+            <h2 class="text-3xl md:text-4xl font-bold mb-4 text-green-500">Challenge Complete!</h2>
+            <p class="text-lg mb-6">Congratulations, you've completed today's challenge!</p>
+            <div class="p-8 bg-gray-800 rounded-lg shadow-xl mb-8">
+                <p class="text-xl">Your Score for Day <span id="dayScoreDisplay"></span>:</p>
+                <h3 class="text-5xl font-bold text-yellow-400 mt-2" id="scoreValue">0</h3>
+            </div>
+            <p class="text-sm mb-6 text-gray-400">
+                Submit your score to the leaderboard to track your progress and compete with your team.
+            </p>
+            <button id="submitScoreButton" class="game-button">
+                <i class="fas fa-save"></i> Submit Score
+            </button>
+        </div>
+
+        <!-- === 5. Leaderboard Screen === -->
+        <div id="leaderboardScreen" class="hidden">
+            <h2 class="text-3xl md:text-4xl font-bold mb-6">Leaderboard</h2>
+            <table class="leaderboard-table">
+                <thead>
+                    <tr>
+                        <th class="w-1/12 text-center">Rank</th>
+                        <th class="w-4/12">Player Name</th>
+                        <th class="w-4/12">Superpower</th>
+                        <th class="w-3/12 text-center">Score</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboardTableBody">
+                    <!-- Leaderboard rows will be generated here -->
+                </tbody>
+            </table>
+            <button id="backFromLeaderboardButton" class="game-button bg-gray-600 hover:bg-gray-500 mt-8">
+                <i class="fas fa-arrow-left"></i> Back to Menu
+            </button>
+        </div>
+    </div>
+
+    <!-- Message Box -->
+    <div id="messageBox" class="message-box">
+        <h2 id="messageHeading"></h2>
+        <p id="messageText"></p>
+        <button id="messageButton">OK</button>
+    </div>
+
+    <script>
+        // === Game State Variables ===
+        let playerName = localStorage.getItem('playerName') || '';
+        let playerSuperpower = localStorage.getItem('playerSuperpower') || '';
+        let playerId = localStorage.getItem('playerId');
+        let playerScores = JSON.parse(localStorage.getItem('playerScores')) || {};
+
+        // Check for an existing player ID in local storage
+        if (!playerId) {
+            playerId = 'player-' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('playerId', playerId);
+        }
+
+        // Word pool for random name generation
+        const wordPool = {
+            adjectives: ['Clear', 'Focused', 'Dynamic', 'Optimal', 'Seamless', 'Vivid', 'Silent', 'Agile', 'Connected', 'Resilient'],
+            nouns: ['Vision', 'Echo', 'Stream', 'Flow', 'Nexus', 'Pulse', 'Catalyst', 'Conductor', 'Guardian', 'Sentinel']
+        };
+
+        // Date-based logic variables
+        const testingMode = true;
+        const testingDate = new Date('2023-12-19T12:00:00Z');
+        const dec1st = new Date('2023-12-01T12:00:00Z');
+
+        let currentDayScore = 0;
+        let currentDayCompleted = 0;
+
+        // === UI Element References ===
+        const introScreen = document.getElementById('introScreen');
+        const startQuestButton = document.getElementById('startQuestButton');
+        const viewLeaderboardButton = document.getElementById('viewLeaderboardButton');
+        const nameSuperpowerScreen = document.getElementById('nameSuperpowerScreen');
+        const playerNameInput = document.getElementById('playerNameInput');
+        const generateNameButton = document.getElementById('generateNameButton');
+        const superpowerCards = document.querySelectorAll('.superpower-card');
+        const startChallengeButton = document.getElementById('startChallengeButton');
+        const questMapScreen = document.getElementById('questMapScreen');
+        const playerNameDisplay = document.getElementById('playerNameDisplay');
+        const playerSuperpowerDisplay = document.getElementById('playerSuperpowerDisplay');
+        const questGrid = document.getElementById('questGrid');
+        const backToMenuButton = document.getElementById('backToMenuButton');
+        const leaderboardScreen = document.getElementById('leaderboardScreen');
+        const leaderboardTableBody = document.getElementById('leaderboardTableBody');
+        const backFromLeaderboardButton = document.getElementById('backFromLeaderboardButton');
+        const messageBox = document.getElementById('messageBox');
+        const messageHeading = document.getElementById('messageHeading');
+        const messageText = document.getElementById('messageText');
+        const messageButton = document.getElementById('messageButton');
+        const challengeCompleteScreen = document.getElementById('challengeCompleteScreen');
+        const scoreValue = document.getElementById('scoreValue');
+        const dayScoreDisplay = document.getElementById('dayScoreDisplay');
+        const submitScoreButton = document.getElementById('submitScoreButton');
+
+        // === Functions ===
+
+        function getCurrentChallengeDay() {
+            const now = testingMode ? testingDate : new Date();
+            if (now < dec1st) return 0;
+
+            let dayCounter = 1;
+            let currentDate = new Date(dec1st);
+            while (currentDate <= now) {
+                const dayOfWeek = currentDate.getUTCDay();
+                if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+                    dayCounter++;
+                }
+                currentDate.setUTCDate(currentDate.getUTCDate() + 1);
+            }
+            return Math.min(dayCounter, 15);
+        }
+
+        function generateRandomName() {
+            const randomAdjective = wordPool.adjectives[Math.floor(Math.random() * wordPool.adjectives.length)];
+            const randomNoun = wordPool.nouns[Math.floor(Math.random() * wordPool.nouns.length)];
+            playerNameInput.value = `${randomAdjective} ${randomNoun}`;
+        }
+
+        function showScreen(screenToShow) {
+            introScreen.classList.add('hidden');
+            nameSuperpowerScreen.classList.add('hidden');
+            questMapScreen.classList.add('hidden');
+            leaderboardScreen.classList.add('hidden');
+            challengeCompleteScreen.classList.add('hidden');
+            screenToShow.classList.remove('hidden');
+        }
+
+        function handleSuperpowerSelect(event) {
+            superpowerCards.forEach(card => card.classList.remove('selected'));
+            const selectedCard = event.currentTarget;
+            selectedCard.classList.add('selected');
+            playerSuperpower = selectedCard.dataset.superpower;
+        }
+
+        async function savePlayerData() {
+            // Recalculate total score from local storage
+            let totalScore = Object.values(playerScores).reduce((sum, score) => sum + score, 0);
+
+            const data = { playerId, playerName, playerSuperpower, totalScore, scores: playerScores };
+            try {
+                const response = await fetch('leaderboard.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                if (!result.success) {
+                    console.error("Error saving data:", result.message);
+                }
+            } catch (error) {
+                console.error("Failed to save player data:", error);
+            }
+        }
+
+        function generateQuestMap() {
+            questGrid.innerHTML = '';
+            const currentDay = getCurrentChallengeDay();
+
+            for (let i = 1; i <= 15; i++) {
+                const card = document.createElement('div');
+                card.classList.add('quest-card');
+                let iconClass = 'fa-play';
+                let statusText = 'Play Challenge';
+                let cardColor = 'text-gray-400';
+                
+                if (playerScores[`day${i}`] !== undefined) {
+                    // Challenge is completed
+                    iconClass = 'fa-check-circle';
+                    statusText = `Score: ${playerScores[`day${i}`]}`;
+                    cardColor = 'text-green-400';
+                    card.classList.add('completed');
+                } else if (i > currentDay) {
+                    // Challenge is locked
+                    card.classList.add('locked');
+                    iconClass = 'fa-lock';
+                    statusText = 'Challenge Locked';
+                    cardColor = 'text-gray-600';
+                } else if (i === currentDay) {
+                    // Current day's challenge
+                    card.classList.add('current-day', 'unlocked');
+                    card.dataset.day = i;
+                    iconClass = 'fa-play';
+                    statusText = 'Start Challenge';
+                    cardColor = 'text-yellow-400';
+                    card.addEventListener('click', () => {
+                        // This is a placeholder for the actual challenge
+                        showChallengeCompleteScreen(i);
+                    });
+                } else {
+                    // Past challenge, not yet completed
+                     card.classList.add('unlocked');
+                    card.dataset.day = i;
+                    iconClass = 'fa-play';
+                    statusText = 'Start Challenge';
+                    cardColor = 'text-gray-400';
+                    card.addEventListener('click', () => {
+                        // This is a placeholder for the actual challenge
+                        showChallengeCompleteScreen(i);
+                    });
+                }
+
+                card.innerHTML = `
+                    <i class="fas ${iconClass} text-2xl mb-2 ${cardColor}"></i>
+                    <h3 class="text-xl font-bold">Day ${i}</h3>
+                    <p class="text-xs text-gray-500">${statusText}</p>
+                `;
+                questGrid.appendChild(card);
+            }
+        }
+
+        function showChallengeCompleteScreen(day) {
+            currentDayCompleted = day;
+            currentDayScore = Math.floor(Math.random() * 100) + 50; // Generate a mock score
+            dayScoreDisplay.textContent = day;
+            scoreValue.textContent = currentDayScore;
+            showScreen(challengeCompleteScreen);
+        }
+
+        async function submitScore() {
+            // Update local storage with the new score
+            playerScores[`day${currentDayCompleted}`] = currentDayScore;
+            localStorage.setItem('playerScores', JSON.stringify(playerScores));
+            
+            // Send the updated data to the server
+            await savePlayerData();
+
+            // Go back to the quest map
+            generateQuestMap();
+            showScreen(questMapScreen);
+        }
+
+        async function fetchLeaderboard() {
+            leaderboardTableBody.innerHTML = '<tr><td colspan="4" class="text-center">Loading...</td></tr>';
+            try {
+                const response = await fetch('leaderboard.php?action=get');
+                const players = await response.json();
+                
+                players.sort((a, b) => b.totalScore - a.totalScore);
+
+                leaderboardTableBody.innerHTML = '';
+                if (players.length === 0) {
+                    leaderboardTableBody.innerHTML = '<tr><td colspan="4" class="text-center">No players yet. Be the first!</td></tr>';
+                } else {
+                    players.forEach((player, index) => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td class="text-center font-bold">${index + 1}</td>
+                            <td>${player.playerName}</td>
+                            <td>${player.playerSuperpower}</td>
+                            <td class="text-center">${player.totalScore}</td>
+                        `;
+                        leaderboardTableBody.appendChild(row);
+                    });
+                }
+            } catch (error) {
+                console.error("Error fetching leaderboard:", error);
+                leaderboardTableBody.innerHTML = '<tr><td colspan="4" class="text-center text-red-500">Error loading leaderboard.</td></tr>';
+            }
+        }
+
+        function showMessage(heading, text) {
+            messageHeading.innerText = heading;
+            messageText.innerText = text;
+            messageButton.onclick = () => {
+                messageBox.style.display = 'none';
+            };
+            messageBox.style.display = 'block';
+        }
+
+        // === Event Listeners ===
+        startQuestButton.addEventListener('click', () => {
+            // Check if player data already exists in local storage
+            if (localStorage.getItem('playerName') && localStorage.getItem('playerSuperpower')) {
+                playerNameDisplay.textContent = playerName;
+                playerSuperpowerDisplay.textContent = playerSuperpower;
+                generateQuestMap();
+                showScreen(questMapScreen);
+            } else {
+                showScreen(nameSuperpowerScreen);
+            }
+        });
+
+        viewLeaderboardButton.addEventListener('click', () => {
+            fetchLeaderboard();
+            showScreen(leaderboardScreen);
+        });
+
+        generateNameButton.addEventListener('click', generateRandomName);
+
+        superpowerCards.forEach(card => {
+            card.addEventListener('click', handleSuperpowerSelect);
+        });
+
+        startChallengeButton.addEventListener('click', async () => {
+            playerName = playerNameInput.value.trim();
+            if (!playerName) {
+                showMessage('Error', 'Please enter a name or generate a random one.');
+                return;
+            }
+            if (!playerSuperpower) {
+                showMessage('Error', 'Please select a superpower to continue your quest.');
+                return;
+            }
+            
+            localStorage.setItem('playerName', playerName);
+            localStorage.setItem('playerSuperpower', playerSuperpower);
+
+            playerNameDisplay.textContent = playerName;
+            playerSuperpowerDisplay.textContent = playerSuperpower;
+
+            await savePlayerData();
+            
+            generateQuestMap();
+            showScreen(questMapScreen);
+        });
+        
+        backToMenuButton.addEventListener('click', () => {
+            showScreen(introScreen);
+        });
+
+        backFromLeaderboardButton.addEventListener('click', () => {
+            showScreen(introScreen);
+        });
+        
+        submitScoreButton.addEventListener('click', async () => {
+            await submitScore();
+        });
+
+        // Initial setup
+        document.addEventListener('DOMContentLoaded', () => {
+            showScreen(introScreen);
+        });
+    </script>
+</body>
+</html>

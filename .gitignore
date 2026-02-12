@@ -1,0 +1,33 @@
+# Configuration - copy config.example.php to config.php and add your credentials
+config.php
+.env
+.env.*
+!.env.example
+
+# Additional config (salesout has its own)
+salesout/config.php
+
+# Composer
+/vendor/
+
+# Logs and debug
+error_log
+*.log
+api/debug_save_email.log
+
+# Certificates (contain private keys)
+/certs/
+
+# Exported data (may contain sensitive info)
+vendors_export.csv
+
+# OS and editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE (optional - remove if you want to share workspace config)
+# .idea/
+# .vscode/

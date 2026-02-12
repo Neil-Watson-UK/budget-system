@@ -1,0 +1,62 @@
+{
+    "articles": {
+        "1": {
+            "type": "single",
+            "mainImage": "https:\/\/eposaudioevents.com\/emailtemplates\/uploads\/img_6849535f0c1db.png",
+            "header": "An ultra-lightweight headset ideal for talk-heavy professionals",
+            "headerAlignment": "center",
+            "headerFontWeight": "100",
+            "content": "<p>Hey %%FirstName%%,<\/p><p><br><\/p><p>The IMPACT 100 is an entry-level headset that delivers exceptional value for money. With smart features that enhance efficiency and an ultra-lightweight design, it is an ideal headset for talk-heavy professionals.<\/p><p><br><\/p><p>If you\u2019re looking for a cost-friendly, professional quality headset,&nbsp;<\/p><p>the IMPACT 100 is the best in its class.&nbsp;<\/p>",
+            "contentAlignment": "center",
+            "buttonText": "Learn more",
+            "buttonUrl": "https:\/\/www.eposaudio.com\/products\/impact-100",
+            "backgroundColor": "#ffffff"
+        },
+        "2": {
+            "type": "double",
+            "leftImage": "",
+            "leftHeader": "One-pager",
+            "leftHeaderAlignment": "center",
+            "leftHeaderFontWeight": "400",
+            "leftContent": "<p><span style=\"color: rgb(6, 6, 6);\">Discover the key differences between the original and the new IMPACT 100.<\/span><\/p>",
+            "leftContentAlignment": "center",
+            "leftButtonText": "Download",
+            "leftButtonUrl": "#",
+            "rightImage": "",
+            "rightHeader": "Fact sheet",
+            "rightHeaderAlignment": "center",
+            "rightHeaderFontWeight": "400",
+            "rightContent": "<p><span style=\"color: rgb(6, 6, 6);\">Download our fact sheet to explore the details of IMPACT 100.<\/span><\/p>",
+            "rightContentAlignment": "center",
+            "rightButtonText": "Download",
+            "rightButtonUrl": "#",
+            "leftColumnWidth": 50,
+            "rightColumnWidth": 50,
+            "backgroundColor": "#eeeff1"
+        }
+    },
+    "articleBlocks": [
+        {
+            "position": 1,
+            "type": "single"
+        },
+        {
+            "position": 2,
+            "type": "double"
+        }
+    ],
+    "subjectLine": "Introducing the new IMPACT 100",
+    "preheaderText": "Ultra-light design for all-day comfort",
+    "backgroundImage": "",
+    "logoUrl": "https:\/\/eposaudioevents.com\/emailtemplates\/uploads\/img_685506ba9c2b8.png",
+    "senderName": "Neil Watson",
+    "senderEmail": "newa@eposaudio.com",
+    "senderMobile": "",
+    "personalizationType": "salesforce_marketing_cloud",
+    "region": "UKI",
+    "audience": "channel",
+    "emailFrom": "newa@eposaudio.com",
+    "sendTime": "2025-06-27T10:09",
+    "createdBy": "Neil",
+    "referenceCode": "8E94DE"
+}

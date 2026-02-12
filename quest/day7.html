@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Noise Cancelling</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- NOTE: The Tailwind CDN is great for development but is not recommended for production sites.
+               For a full-scale project, you would install Tailwind as a PostCSS plugin. -->
+    
+    <!-- Tone.js for game sounds -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d1117; /* Darker background */
+            color: #e2e8f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 1rem;
+        }
+
+        .game-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+            padding: 2rem;
+            border-radius: 1.5rem;
+            background-color: #161b22; /* Slightly lighter background for the container */
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            max-width: 95vw;
+            width: 100%;
+            transition: all 0.3s ease-in-out;
+        }
+
+        @media (min-width: 768px) {
+            .game-container {
+                max-width: 800px;
+            }
+        }
+        
+        .game-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #58a6ff; /* A futuristic blue */
+            text-shadow: 0 0 10px rgba(88, 166, 255, 0.5);
+        }
+
+        .game-ui {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #ffffff;
+            padding: 0 0.5rem;
+        }
+        
+        .game-canvas {
+            border-radius: 1rem;
+            box-shadow: 0 0 20px rgba(88, 166, 255, 0.3);
+            background-color: #0d1117;
+            width: 100%;
+            height: auto;
+            aspect-ratio: 4 / 3;
+        }
+
+        .game-controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem;
+            width: 100%;
+        }
+
+        .control-button {
+            padding: 0.75rem 2rem;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .start-button {
+            background-color: #58a6ff;
+            color: #0d1117;
+        }
+
+        .start-button:hover {
+            background-color: #79c0ff;
+            transform: translateY(-2px);
+        }
+
+        .reset-button {
+            background-color: #f85149;
+            color: #0d1117;
+        }
+
+        .reset-button:hover {
+            background-color: #ff7b72;
+            transform: translateY(-2px);
+        }
+
+        /* Message Box Styling */
+        .message-box {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(22, 27, 34, 0.95);
+            border: 2px solid #58a6ff;
+            border-radius: 1rem;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            display: none;
+        }
+        .message-box h2 {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #58a6ff;
+            margin-bottom: 1rem;
+        }
+        .message-box p {
+            font-size: 1.1rem;
+            color: #ffffff;
+        }
+        .message-box button {
+            background-color: #58a6ff;
+            color: #0d1117;
+            margin-top: 1.5rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* Player Ship SVG */
+        .player-svg {
+            fill: #72f1b4;
+            stroke: #39e99a;
+            stroke-width: 2;
+        }
+        /* Enemy Ship SVG */
+        .enemy-svg {
+            fill: #f172b4;
+            stroke: #e9399a;
+            stroke-width: 2;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1 class="game-title">Noise Cancelling</h1>
+        <div class="game-ui">
+            <span id="score-display">Score: 0</span>
+            <span id="lives-display">Lives: 3</span>
+        </div>
+        <canvas id="gameCanvas" class="game-canvas"></canvas>
+        <div class="game-controls">
+            <button id="startButton" class="control-button start-button">Start Game</button>
+            <button id="resetButton" class="control-button reset-button">Reset</button>
+        </div>
+        
+        <!-- Message Box for game notifications -->
+        <div id="messageBox" class="message-box">
+            <h2 id="messageHeading"></h2>
+            <p id="messageText"></p>
+            <button id="messageButton">OK</button>
+        </div>
+    </div>
+
+    <script>
+        window.onload = function() {
+            // --- Game Constants and Initialization ---
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+            const scoreDisplay = document.getElementById('score-display');
+            const livesDisplay = document.getElementById('lives-display');
+            const startButton = document.getElementById('startButton');
+            const resetButton = document.getElementById('resetButton');
+            const messageBox = document.getElementById('messageBox');
+            const messageHeading = document.getElementById('messageHeading');
+            const messageText = document.getElementById('messageText');
+            const messageButton = document.getElementById('messageButton');
+            
+            // --- Game State Variables ---
+            let gameState = 'menu'; // 'menu', 'playing', 'paused', 'gameOver'
+            let score = 0;
+            let lives = 3;
+            let level = 1;
+            
+            let player;
+            let enemies = [];
+            let playerLasers = [];
+            let enemyLasers = [];
+            
+            let shootSound, explosionSound, hitSound;
+            // A flag to prevent multiple explosion sounds in a single frame
+            let explosionSoundPlayedThisFrame = false;
+
+            // --- Game Sounds using Tone.js ---
+            function setupAudio() {
+                // The AudioContext must be started by a user gesture.
+                // We handle this by calling Tone.start() on the startButton click.
+                shootSound = new Tone.PolySynth(Tone.Synth, {
+                    oscillator: { type: 'triangle' },
+                    envelope: { attack: 0.01, decay: 0.1, sustain: 0, release: 0.1 }
+                }).toDestination();
+                
+                explosionSound = new Tone.NoiseSynth({
+                    noise: { type: 'white' },
+                    envelope: { attack: 0.005, decay: 0.2, sustain: 0, release: 0.2 }
+                }).toDestination();
+                
+                hitSound = new Tone.Synth({
+                    oscillator: { type: 'sawtooth' },
+                    envelope: { attack: 0.05, decay: 0.5, sustain: 0, release: 0.5 }
+                }).toDestination();
+            }
+
+            function playShootSound() { if (shootSound) shootSound.triggerAttackRelease("C4", "8n"); }
+            
+            function playExplosionSound() {
+                // This function is throttled to prevent the Tone.js error
+                if (explosionSound && !explosionSoundPlayedThisFrame) {
+                    explosionSound.triggerAttackRelease("4n");
+                    explosionSoundPlayedThisFrame = true;
+                }
+            }
+            
+            function playHitSound() { if (hitSound) hitSound.triggerAttackRelease("C2", "8n"); }
+
+            // --- Game Entities Classes ---
+            class Player {
+                constructor() {
+                    this.width = 40;
+                    this.height = 30;
+                    this.x = 0;
+                    this.y = 0; 
+                    this.baseSpeed = 5;
+                    this.speed = this.baseSpeed;
+                    this.baseShootInterval = 200; // milliseconds
+                    this.shootInterval = this.baseShootInterval;
+                    this.lastShotTime = 0;
+                    this.updatePosition();
+                }
+                
+                updatePosition() {
+                    this.y = canvas.height - this.height - 20;
+                    this.x = (canvas.width / 2) - (this.width / 2);
+                }
+
+                draw() {
+                    ctx.fillStyle = '#72f1b4'; // Player color
+                    ctx.beginPath();
+                    ctx.moveTo(this.x + this.width / 2, this.y); // Top point
+                    ctx.lineTo(this.x, this.y + this.height); // Bottom left
+                    ctx.lineTo(this.x + this.width / 2, this.y + this.height * 0.75); // Middle indent
+                    ctx.lineTo(this.x + this.width, this.y + this.height); // Bottom right
+                    ctx.closePath();
+                    ctx.fill();
+                }
+
+                update(direction) {
+                    this.x += direction * this.speed;
+                    if (this.x < 0) this.x = 0;
+                    if (this.x + this.width > canvas.width) this.x = canvas.width - this.width;
+                }
+            }
+
+            class Enemy {
+                constructor(x, y, speed, shootInterval) {
+                    this.width = 30;
+                    this.height = 25;
+                    this.x = x;
+                    this.y = y;
+                    this.speed = speed;
+                    this.direction = 1; // 1 for right, -1 for left
+                    this.lastShotTime = 0;
+                    this.shootInterval = shootInterval + Math.random() * 2000;
+                }
+
+                draw() {
+                    ctx.fillStyle = '#f172b4'; // Enemy color
+                    ctx.beginPath();
+                    ctx.moveTo(this.x, this.y + this.height); // Bottom left
+                    ctx.lineTo(this.x + this.width / 2, this.y); // Top point
+                    ctx.lineTo(this.x + this.width, this.y + this.height); // Bottom right
+                    ctx.lineTo(this.x + this.width * 0.75, this.y + this.height * 0.5); // Mid right
+                    ctx.lineTo(this.x + this.width * 0.25, this.y + this.height * 0.5); // Mid left
+                    ctx.closePath();
+                    ctx.fill();
+                }
+
+                update() {
+                    this.x += this.speed * this.direction;
+                }
+
+                shoot(currentTime) {
+                    if (currentTime - this.lastShotTime > this.shootInterval) {
+                        enemyLasers.push(new Laser(this.x + this.width / 2, this.y + this.height, 'enemy'));
+                        this.lastShotTime = currentTime;
+                    }
+                }
+            }
+
+            class Laser {
+                constructor(x, y, type) {
+                    this.x = x;
+                    this.y = y;
+                    this.width = 4;
+                    this.height = 15;
+                    this.speed = (type === 'player') ? 7 : -4;
+                    this.color = (type === 'player') ? '#ff7b72' : '#ffffff';
+                }
+
+                draw() {
+                    ctx.fillStyle = this.color;
+                    ctx.fillRect(this.x, this.y, this.width, this.height);
+                }
+
+                update() {
+                    this.y -= this.speed;
+                }
+            }
+            
+            // --- Game Functions ---
+            
+            function updateUI() {
+                scoreDisplay.innerText = `Score: ${score}`;
+                livesDisplay.innerText = `Lives: ${lives}`;
+            }
+
+            function showMessage(heading, text, buttonText, onButtonClick) {
+                messageHeading.innerText = heading;
+                messageText.innerText = text;
+                messageButton.innerText = buttonText;
+                messageButton.onclick = () => {
+                    messageBox.style.display = 'none';
+                    if (onButtonClick) {
+                        onButtonClick();
+                    }
+                };
+                messageBox.style.display = 'block';
+            }
+
+            function resetGame() {
+                score = 0;
+                lives = 3;
+                level = 1;
+                enemies = [];
+                playerLasers = [];
+                enemyLasers = [];
+                player = new Player();
+                generateEnemies();
+                updateUI();
+            }
+
+            function levelUp() {
+                level++;
+                // Increase player speed by 10%
+                player.speed = player.baseSpeed * (1 + (level - 1) * 0.1);
+                // Decrease player shoot interval by 5%
+                player.shootInterval = player.baseShootInterval * Math.pow(0.95, level - 1);
+
+                // Clear current enemies and generate a new wave with increased speed and fire rate
+                enemies = [];
+                generateEnemies();
+                
+                // Pause the game state while the message is displayed
+                gameState = 'paused';
+
+                showMessage(
+                    `Level ${level} Complete!`,
+                    "The noise is getting louder. Be careful!",
+                    "Continue",
+                    () => {
+                        // Resume the game when the button is clicked
+                        gameState = 'playing';
+                        requestAnimationFrame(gameLoop);
+                    }
+                );
+            }
+
+            function gameOver() {
+                gameState = 'gameOver';
+                playHitSound();
+                showMessage("Game Over", `Your ship was destroyed! Score: ${score}`, "Try Again?", () => {
+                    resetGame();
+                    startButton.disabled = false;
+                    gameState = 'menu';
+                });
+            }
+
+            function generateEnemies() {
+                const rows = 4;
+                const cols = 8;
+                const enemyPadding = 10;
+                const startX = (canvas.width - (cols * 30 + (cols - 1) * enemyPadding)) / 2;
+                const startY = 50;
+                
+                // Increase enemy speed and fire rate based on level
+                const enemySpeed = 1 * (1 + (level - 1) * 0.2); // 20% faster per level
+                const enemyShootInterval = 4000 * Math.pow(0.9, level - 1); // 10% faster firing rate per level
+
+                for (let i = 0; i < rows; i++) {
+                    for (let j = 0; j < cols; j++) {
+                        enemies.push(new Enemy(
+                            startX + j * (30 + enemyPadding),
+                            startY + i * (25 + enemyPadding),
+                            enemySpeed,
+                            enemyShootInterval
+                        ));
+                    }
+                }
+            }
+
+            function checkCollisions() {
+                // Player Laser - Enemy collision
+                for (let i = playerLasers.length - 1; i >= 0; i--) {
+                    const laser = playerLasers[i];
+                    for (let j = enemies.length - 1; j >= 0; j--) {
+                        const enemy = enemies[j];
+                        
+                        if (laser.x < enemy.x + enemy.width &&
+                            laser.x + laser.width > enemy.x &&
+                            laser.y < enemy.y + enemy.height &&
+                            laser.y + laser.height > enemy.y) {
+                            
+                            score += 100;
+                            // Play the sound, but only once per frame
+                            playExplosionSound();
+                            playerLasers.splice(i, 1);
+                            enemies.splice(j, 1);
+                            
+                            // Break the inner loop to avoid double-counting
+                            break;
+                        }
+                    }
+                }
+
+                // Enemy Laser - Player collision
+                for (let i = enemyLasers.length - 1; i >= 0; i--) {
+                    const laser = enemyLasers[i];
+
+                    if (laser.x < player.x + player.width &&
+                        laser.x + laser.width > player.x &&
+                        laser.y < player.y + player.height &&
+                        laser.y + laser.height > player.y) {
+
+                        playHitSound();
+                        lives--;
+                        enemyLasers.splice(i, 1);
+
+                        if (lives <= 0) {
+                            gameOver();
+                        }
+                        // Break the loop since we already had a hit
+                        break;
+                    }
+                }
+            }
+
+            // --- The main game loop function ---
+            function gameLoop(timestamp) {
+                // Reset the audio throttle flag at the start of each frame
+                explosionSoundPlayedThisFrame = false;
+                
+                if (gameState !== 'playing') {
+                    // If the game is not playing, we simply request the next frame
+                    // without updating game logic. This keeps the animation frame loop running
+                    // but effectively "pauses" the game.
+                    requestAnimationFrame(gameLoop);
+                    return;
+                }
+
+                // --- Handle Input ---
+                handleInput(timestamp);
+
+                // --- Update Game State ---
+                // Clear canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Update and draw player
+                player.draw();
+
+                // Update and draw enemies
+                let shouldChangeDirection = false;
+                enemies.forEach(enemy => {
+                    enemy.update();
+                    enemy.draw();
+                    enemy.shoot(timestamp); // Enemies now shoot!
+
+                    // Check if enemies hit the side of the screen
+                    if (enemy.x + enemy.width > canvas.width || enemy.x < 0) {
+                        shouldChangeDirection = true;
+                    }
+                });
+                
+                // If any enemy hits the wall, all of them reverse direction and move down
+                if (shouldChangeDirection) {
+                    enemies.forEach(enemy => {
+                        enemy.direction *= -1;
+                        enemy.y += 10; // Move down a little
+                    });
+                }
+                
+                // Update and draw lasers
+                playerLasers.forEach(laser => {
+                    laser.update();
+                    laser.draw();
+                });
+                enemyLasers.forEach(laser => {
+                    laser.update();
+                    laser.draw();
+                });
+
+                // Remove lasers that have flown off-screen
+                playerLasers = playerLasers.filter(laser => laser.y + laser.height > 0);
+                enemyLasers = enemyLasers.filter(laser => laser.y < canvas.height);
+
+                // Check for collisions
+                checkCollisions();
+                updateUI();
+                
+                // If all enemies are destroyed, win the level (for now, just regenerate)
+                if (enemies.length === 0) {
+                    levelUp();
+                }
+
+                // Request the next animation frame to keep the loop running
+                requestAnimationFrame(gameLoop);
+            }
+
+            // --- Event Listeners and Game Flow ---
+            function handleResize() {
+                const gameContainer = document.querySelector('.game-container');
+                const newWidth = gameContainer.offsetWidth - 64;
+                const newHeight = newWidth * 0.75;
+                
+                canvas.width = newWidth;
+                canvas.height = newHeight;
+
+                if (player) {
+                    player.updatePosition();
+                }
+            }
+
+            let keys = {};
+            window.addEventListener('keydown', (e) => {
+                keys[e.key] = true;
+            });
+            window.addEventListener('keyup', (e) => {
+                keys[e.key] = false;
+            });
+
+            function handleInput(currentTime) {
+                if (keys['ArrowLeft'] || keys['a']) {
+                    player.update(-1);
+                }
+                if (keys['ArrowRight'] || keys['d']) {
+                    player.update(1);
+                }
+                if ((keys[' '] || keys['ArrowUp'] || keys['w']) && (currentTime - player.lastShotTime > player.shootInterval)) {
+                    playerLasers.push(new Laser(player.x + player.width / 2, player.y, 'player'));
+                    playShootSound();
+                    player.lastShotTime = currentTime;
+                }
+            }
+            
+            startButton.addEventListener('click', async () => {
+                if (gameState === 'menu' || gameState === 'gameOver') {
+                    gameState = 'playing';
+                    await Tone.start();
+                    setupAudio();
+                    resetGame();
+                    startButton.disabled = true;
+                    // Start the main game loop
+                    requestAnimationFrame(gameLoop);
+                }
+            });
+            
+            resetButton.addEventListener('click', () => {
+                if (gameState !== 'menu') {
+                    resetGame();
+                    showMessage("Game Reset", "Press Start to play again.", "OK", () => {
+                        startButton.disabled = false;
+                        gameState = 'menu';
+                    });
+                }
+            });
+            
+            // Initial setup
+            handleResize();
+            window.addEventListener('resize', handleResize);
+            
+            showMessage(
+                "Noise Cancelling", 
+                "Use the Arrow Keys or A/D to move left and right. Press Spacebar or the Up Arrow/W to shoot!", 
+                "Start Game", 
+                () => {
+                    // This is the callback when the user clicks 'OK' on the initial message.
+                    // It doesn't start the game, it just makes the 'Start Game' button clickable.
+                    startButton.disabled = false;
+                }
+            );
+            updateUI();
+        };
+    </script>
+</body>
+</html>

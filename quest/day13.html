@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beat Blaster</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tone.js for music and sound effects -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c; /* Tailwind's gray-900 equivalent */
+            color: #e2e8f0; /* Tailwind's gray-200 equivalent */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 1rem;
+        }
+
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+            padding: 2.5rem;
+            border-radius: 1.5rem;
+            background-color: #2d3748; /* Tailwind's gray-800 equivalent */
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+        }
+
+        .track-container {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            border-radius: 1rem;
+            background-color: #4a5568; /* Tailwind's gray-600 equivalent */
+            overflow: hidden;
+            display: flex;
+            justify-content: space-around;
+        }
+        
+        .track {
+            width: 25%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.1);
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            padding-bottom: 0.5rem;
+        }
+
+        .note {
+            position: absolute;
+            bottom: 100%;
+            width: 80%;
+            height: 25px;
+            border-radius: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            transition: transform 0.1s ease-out;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+            border: 2px solid rgba(0, 0, 0, 0.2);
+        }
+        
+        .hit-zone {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 50px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-top: 3px dashed #e2e8f0;
+        }
+        
+        .key-display {
+            position: absolute;
+            bottom: 1rem;
+            font-size: 2rem;
+            font-weight: bold;
+            color: #e2e8f0;
+            pointer-events: none;
+            text-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+            transition: color 0.1s;
+        }
+
+        .key-display.pressed {
+            color: #3b82f6; /* Blue-500 */
+        }
+
+        .message-box {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #2d3748;
+            padding: 2.5rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            z-index: 100;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200">
+    <div class="game-container">
+        <h1 class="text-4xl md:text-5xl font-bold text-blue-400 mb-2">Beat Blaster</h1>
+        <p class="text-md md:text-lg text-gray-400 mb-6">
+            Press the matching key as the note hits the line!
+        </p>
+
+        <div class="flex items-center justify-center gap-6 text-2xl font-semibold mb-6">
+            <div>Score: <span id="score-display" class="text-yellow-400">0</span></div>
+            <div>Level: <span id="level-display" class="text-green-400">1</span></div>
+            <div>Missed: <span id="missed-display" class="text-red-400">0</span></div>
+        </div>
+
+        <div class="track-container" id="track-container">
+            <div class="track" data-key="a">
+                <span class="key-display">A</span>
+            </div>
+            <div class="track" data-key="s">
+                <span class="key-display">S</span>
+            </div>
+            <div class="track" data-key="d">
+                <span class="key-display">D</span>
+            </div>
+            <div class="track" data-key="f">
+                <span class="key-display">F</span>
+            </div>
+            <div class="hit-zone"></div>
+        </div>
+        
+        <button id="start-button" class="mt-8 px-8 py-4 bg-green-500 hover:bg-green-600 text-white font-bold rounded-full transition-transform transform hover:scale-105">
+            Start Game
+        </button>
+
+        <!-- Message Box -->
+        <div id="message-box" class="message-box hidden">
+            <h3 id="message-heading" class="text-2xl font-bold text-white mb-2"></h3>
+            <p id="message-text" class="text-gray-300 mb-6"></p>
+            <button id="message-button" class="px-8 py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-full transition-transform transform hover:scale-105">
+                OK
+            </button>
+        </div>
+    </div>
+
+    <script>
+        window.onload = function() {
+            // === Game State Variables ===
+            let gamePlaying = false;
+            let score = 0;
+            let level = 1;
+            let missedNotes = 0;
+            const maxMissedNotes = 10;
+            let noteSpeed = 2000; // Time in ms for a note to travel the track
+            const notesOnScreen = [];
+            const trackKeys = ['a', 's', 'd', 'f'];
+            const noteColors = ['#f87171', '#3b82f6', '#facc15', '#10b981'];
+
+            // === UI Elements ===
+            const startButton = document.getElementById('start-button');
+            const scoreDisplay = document.getElementById('score-display');
+            const levelDisplay = document.getElementById('level-display');
+            const missedDisplay = document.getElementById('missed-display');
+            const trackContainer = document.getElementById('track-container');
+            const keyDisplays = document.querySelectorAll('.key-display');
+            const messageBox = document.getElementById('message-box');
+            const messageHeading = document.getElementById('message-heading');
+            const messageText = document.getElementById('message-text');
+            const messageButton = document.getElementById('message-button');
+
+            // === Tone.js Audio Setup ===
+            const playerSynth = new Tone.Synth({
+                oscillator: { type: "sine" },
+                envelope: {
+                    attack: 0.005,
+                    decay: 0.2,
+                    sustain: 0.1,
+                    release: 0.3
+                }
+            }).toDestination();
+
+            const hitSynth = new Tone.PolySynth(Tone.Synth, {
+                oscillator: { type: "triangle" },
+                envelope: {
+                    attack: 0.005,
+                    decay: 0.1,
+                    sustain: 0.05,
+                    release: 0.1
+                }
+            }).toDestination();
+            
+            const backgroundSynth = new Tone.PolySynth(Tone.Synth, {
+                oscillator: { type: "sine" },
+                envelope: {
+                    attack: 0.005,
+                    decay: 0.1,
+                    sustain: 0.3,
+                    release: 0.5
+                }
+            }).toDestination();
+            
+            const backgroundNotes = ["C4", "E4", "G4", "A4"];
+            let backgroundLoop = null;
+
+            // === Game Functions ===
+            function startGame() {
+                if (Tone.context.state !== 'running') {
+                    Tone.start();
+                }
+                
+                // Clear any existing notes and state
+                notesOnScreen.forEach(note => note.element.remove());
+                notesOnScreen.length = 0;
+                
+                gamePlaying = true;
+                score = 0;
+                level = 1;
+                missedNotes = 0;
+                noteSpeed = 2000;
+                startButton.style.display = 'none';
+                updateUI();
+                
+                // Start the background music and note scheduling
+                Tone.Transport.start();
+                backgroundLoop = new Tone.Loop(time => {
+                    const note = backgroundNotes[Math.floor(Math.random() * backgroundNotes.length)];
+                    backgroundSynth.triggerAttackRelease(note, "4n", time);
+                    spawnNote();
+                }, "4n").start(0);
+
+                gameLoop();
+            }
+
+            function gameOver() {
+                gamePlaying = false;
+                Tone.Transport.stop();
+                if (backgroundLoop) backgroundLoop.dispose();
+                
+                // Remove all notes from the screen
+                notesOnScreen.forEach(note => note.element.remove());
+                notesOnScreen.length = 0;
+
+                showMessage(
+                    "Game Over!",
+                    `You missed too many notes.<br>Your final score is: ${score}<br>Your final level: ${level}`,
+                    "Play Again",
+                    startGame
+                );
+            }
+
+            function spawnNote() {
+                const trackIndex = Math.floor(Math.random() * trackKeys.length);
+                const note = {
+                    key: trackKeys[trackIndex],
+                    color: noteColors[trackIndex],
+                    element: document.createElement('div'),
+                    y: 400, // Starting at the top of the track container
+                    hit: false,
+                    missed: false
+                };
+                
+                note.element.className = `note`;
+                note.element.style.backgroundColor = note.color;
+                const trackElement = trackContainer.querySelector(`[data-key="${note.key}"]`);
+                trackElement.appendChild(note.element);
+                notesOnScreen.push(note);
+            }
+
+            function gameLoop(timestamp) {
+                if (!gamePlaying) return;
+
+                const elapsedTime = timestamp - (gameLoop.lastTimestamp || timestamp);
+                gameLoop.lastTimestamp = timestamp;
+
+                for (let i = 0; i < notesOnScreen.length; i++) {
+                    const note = notesOnScreen[i];
+                    // Update note position
+                    note.y -= (elapsedTime / noteSpeed) * 400; // Moves note from top to bottom
+                    note.element.style.bottom = `${note.y / 400 * 100}%`;
+
+                    // Check for missed notes
+                    if (note.y <= -20 && !note.hit && !note.missed) {
+                        note.missed = true;
+                        missedNotes++;
+                        playerSynth.triggerAttackRelease("C2", "8n");
+                        updateUI();
+                        // Remove the element after it leaves the screen
+                        setTimeout(() => note.element.remove(), 100);
+                        if (missedNotes >= maxMissedNotes) {
+                            gameOver();
+                            return;
+                        }
+                    }
+                }
+                
+                // Filter out notes that have been hit or missed
+                notesOnScreen.filter(note => !note.hit && !note.missed);
+
+                requestAnimationFrame(gameLoop);
+            }
+
+            function handleKeyPress(e) {
+                if (!gamePlaying) return;
+                const key = e.key.toLowerCase();
+                const hitZoneY = 50; // The height of the hit zone in pixels
+                const tolerance = 25; // How close the note needs to be to be a hit
+                
+                // Find a note that is in the correct track and hit zone
+                const hitNote = notesOnScreen.find(note => 
+                    note.key === key && 
+                    note.y <= hitZoneY + tolerance && 
+                    note.y >= hitZoneY - tolerance && 
+                    !note.hit
+                );
+
+                if (hitNote) {
+                    hitNote.hit = true;
+                    score += 20;
+                    level = Math.floor(score / 100) + 1;
+                    noteSpeed = Math.max(1000, 2000 - (level * 100)); // Increase speed with level
+                    
+                    // Play a satisfying hit sound
+                    hitSynth.triggerAttackRelease("G5", "16n");
+
+                    // Visual feedback for the hit
+                    hitNote.element.style.transform = `scale(1.5) translateX(-50%)`;
+                    hitNote.element.style.opacity = 0;
+                    
+                    // Remove the element after the animation
+                    setTimeout(() => hitNote.element.remove(), 200);
+
+                } else {
+                    // This is a penalty for a key press that doesn't hit a note
+                    score = Math.max(0, score - 5);
+                    playerSynth.triggerAttackRelease("C2", "8n");
+                }
+                updateUI();
+            }
+
+            function updateUI() {
+                scoreDisplay.textContent = score;
+                levelDisplay.textContent = level;
+                missedDisplay.textContent = missedNotes;
+            }
+
+            // Function to show a custom message box
+            function showMessage(heading, text, buttonText, onButtonClick) {
+                messageHeading.innerText = heading;
+                messageText.innerHTML = text;
+                messageButton.innerText = buttonText;
+                messageButton.onclick = () => {
+                    messageBox.style.display = 'none';
+                    if (onButtonClick) onButtonClick();
+                };
+                messageBox.style.display = 'flex';
+            }
+
+            function handleKeyDown(e) {
+                const key = e.key.toLowerCase();
+                const keyDisplay = document.querySelector(`.track[data-key="${key}"] .key-display`);
+                if (keyDisplay) {
+                    keyDisplay.classList.add('pressed');
+                }
+            }
+
+            function handleKeyUp(e) {
+                const key = e.key.toLowerCase();
+                const keyDisplay = document.querySelector(`.track[data-key="${key}"] .key-display`);
+                if (keyDisplay) {
+                    keyDisplay.classList.remove('pressed');
+                }
+            }
+            
+            // === Event Listeners and Initial Setup ===
+            startButton.addEventListener('click', startGame);
+            document.addEventListener('keydown', handleKeyPress);
+            document.addEventListener('keydown', handleKeyDown);
+            document.addEventListener('keyup', handleKeyUp);
+            
+            showMessage(
+                "Beat Blaster",
+                "Press the A, S, D, or F key when the note hits the line. Time it perfectly to get a high score!",
+                "Start Game",
+                () => { startButton.style.display = 'block'; }
+            );
+        };
+    </script>
+</body>
+</html>

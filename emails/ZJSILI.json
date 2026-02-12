@@ -1,0 +1,52 @@
+{
+    "referenceCode": "ZJSILI",
+    "subjectLine": "",
+    "preheaderText": "",
+    "backgroundImage": "",
+    "logoUrl": "https:\/\/eposaudioevents.com\/emailtemplates\/uploads\/img_683f0affc30f2.png",
+    "senderName": "",
+    "senderEmail": "",
+    "senderMobile": "",
+    "personalizationType": "none",
+    "region": "NORD",
+    "audience": "channel",
+    "emailFrom": "",
+    "sendTime": "",
+    "articleBlocks": [
+        {
+            "position": 1,
+            "type": "single"
+        },
+        {
+            "position": 2,
+            "type": "single"
+        }
+    ],
+    "articles": {
+        "1": {
+            "type": "single",
+            "mainImage": "",
+            "header": "",
+            "headerAlignment": "left",
+            "headerFontWeight": "400",
+            "content": "",
+            "contentAlignment": "left",
+            "buttonText": "",
+            "buttonUrl": "",
+            "backgroundColor": "#ffffff"
+        },
+        "2": {
+            "type": "single",
+            "mainImage": "",
+            "header": "",
+            "headerAlignment": "left",
+            "headerFontWeight": "400",
+            "content": "",
+            "contentAlignment": "left",
+            "buttonText": "",
+            "buttonUrl": "",
+            "backgroundColor": "#ffffff"
+        }
+    },
+    "createdBy": "Neil"
+}

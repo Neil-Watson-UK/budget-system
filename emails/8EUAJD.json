@@ -1,0 +1,36 @@
+{
+    "referenceCode": "8EUAJD",
+    "subjectLine": "",
+    "preheaderText": "",
+    "backgroundImage": "",
+    "logoUrl": "https:\/\/eposaudioevents.com\/emailtemplates\/uploads\/img_683f0affc30f2.png",
+    "senderName": "",
+    "senderEmail": "",
+    "senderMobile": "",
+    "personalizationType": "none",
+    "region": "NORD",
+    "audience": "channel",
+    "emailFrom": "",
+    "sendTime": "",
+    "articleBlocks": [
+        {
+            "position": 1,
+            "type": "single"
+        }
+    ],
+    "articles": {
+        "1": {
+            "type": "single",
+            "mainImage": "",
+            "header": "",
+            "headerAlignment": "left",
+            "headerFontWeight": "400",
+            "content": "<p><br><\/p>",
+            "contentAlignment": "left",
+            "buttonText": "",
+            "buttonUrl": "",
+            "backgroundColor": "#ffffff"
+        }
+    },
+    "createdBy": "Neil"
+}

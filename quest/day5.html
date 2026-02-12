@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delivering Office Gifts</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tone.js for game sounds -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c; /* Tailwind's gray-900 equivalent */
+            color: #e2e8f0; /* Tailwind's gray-200 equivalent */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 1rem;
+        }
+
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+            padding: 2rem;
+            border-radius: 1.5rem;
+            background-color: #2d3748; /* Tailwind's gray-800 equivalent */
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            max-width: 95vw;
+            width: 100%;
+            transition: all 0.3s ease-in-out;
+        }
+
+        @media (min-width: 768px) {
+            .game-container {
+                max-width: 800px;
+            }
+        }
+        
+        .game-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #48bb78; /* Tailwind's green-500 */
+            text-shadow: 0 0 10px rgba(72, 187, 120, 0.5);
+        }
+
+        .game-ui {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #ffffff;
+            padding: 0 0.5rem;
+        }
+        
+        .game-canvas {
+            border-radius: 1rem;
+            box-shadow: 0 0 20px rgba(72, 187, 120, 0.3);
+            background-color: #1a202c;
+            width: 100%;
+            height: auto;
+            aspect-ratio: 4 / 3;
+        }
+
+        .game-controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem;
+            width: 100%;
+        }
+
+        .control-button {
+            padding: 0.75rem 2rem;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .start-button {
+            background-color: #48bb78;
+            color: #1a202c;
+        }
+
+        .start-button:hover {
+            background-color: #68d391;
+            transform: translateY(-2px);
+        }
+
+        .reset-button {
+            background-color: #f56565;
+            color: #1a202c;
+        }
+
+        .reset-button:hover {
+            background-color: #fc8181;
+            transform: translateY(-2px);
+        }
+
+        .game-info {
+            width: 100%;
+            text-align: center;
+            font-size: 1rem;
+        }
+
+        /* Message Box Styling */
+        .message-box {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(45, 55, 72, 0.95);
+            border: 2px solid #48bb78;
+            border-radius: 1rem;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            display: none;
+        }
+        .message-box h2 {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #48bb78;
+            margin-bottom: 1rem;
+        }
+        .message-box p {
+            font-size: 1.1rem;
+            color: #ffffff;
+        }
+        .message-box button {
+            background-color: #48bb78;
+            color: #1a202c;
+            margin-top: 1.5rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .gift-inventory {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .gift-slot {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            border: 2px solid #a0aec0;
+            font-size: 0.8rem;
+            color: #e2e8f0;
+            background-color: #2d3748;
+            transition: transform 0.2s ease-in-out;
+        }
+
+        .gift-slot.active {
+            border-color: #48bb78;
+            transform: scale(1.1);
+            box-shadow: 0 0 10px rgba(72, 187, 120, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1 class="game-title">Delivering Office Gifts</h1>
+        <div class="game-ui">
+            <span id="score-display">Score: 0</span>
+            <span id="lives-display">Lives: 3</span>
+        </div>
+        <canvas id="gameCanvas" class="game-canvas"></canvas>
+        <div class="game-info">
+            <div id="current-order"></div>
+            <div class="gift-inventory" id="inventory-display"></div>
+        </div>
+        <div class="game-controls">
+            <button id="startButton" class="control-button start-button">Start Game</button>
+            <button id="resetButton" class="control-button reset-button">Reset</button>
+        </div>
+        
+        <!-- Message Box for game notifications -->
+        <div id="messageBox" class="message-box">
+            <h2 id="messageHeading"></h2>
+            <p id="messageText"></p>
+            <button id="messageButton">OK</button>
+        </div>
+    </div>
+
+    <script>
+        window.onload = function() {
+            // --- Game Constants and Initialization ---
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+            const scoreDisplay = document.getElementById('score-display');
+            const livesDisplay = document.getElementById('lives-display');
+            const startButton = document.getElementById('startButton');
+            const resetButton = document.getElementById('resetButton');
+            const messageBox = document.getElementById('messageBox');
+            const messageHeading = document.getElementById('messageHeading');
+            const messageText = document.getElementById('messageText');
+            const messageButton = document.getElementById('messageButton');
+            const currentOrderDisplay = document.getElementById('current-order');
+            const inventoryDisplay = document.getElementById('inventory-display');
+
+            // --- Game State Variables ---
+            let gameState = 'menu'; // 'menu', 'playing', 'gameOver'
+            let score = 0;
+            let lives = 3;
+            let gameSpeed = 3; // The initial scrolling speed
+            let lastObjectTime = 0;
+            let objectSpawnInterval = 1500; // milliseconds
+            let scoreForNextSpeedIncrease = 500;
+            
+            // Y-coordinates for the three lanes
+            let laneY = [
+                canvas.height * 0.4, 
+                canvas.height * 0.55, 
+                canvas.height * 0.7
+            ];
+            let currentLane = 1;
+
+            // Updated list of headset types for gifts
+            const GIFT_TYPES = ['Wireless DECT', 'Bluetooth', 'ANC', 'Wired'];
+            let playerInventory = [];
+            const MAX_INVENTORY = 4;
+            let currentGiftIndex = 0;
+
+            let desks = [];
+            let obstacles = [];
+            let gifts = [];
+
+            let deliverySound, collisionSound, correctSound, wrongSound, refillSound, levelUpSound;
+
+            // --- Game Sounds using Tone.js ---
+            function setupAudio() {
+                // Sound for throwing a gift
+                deliverySound = new Tone.Synth({
+                    oscillator: { type: 'triangle' },
+                    envelope: { attack: 0.05, decay: 0.1, sustain: 0, release: 0.2 }
+                }).toDestination();
+                // Sound for colliding with an obstacle
+                collisionSound = new Tone.PolySynth(Tone.Synth, {
+                    oscillator: { type: 'sawtooth' }
+                }).toDestination();
+                // Sound for a correct delivery
+                correctSound = new Tone.Synth({
+                    oscillator: { type: 'sine' },
+                    envelope: { attack: 0.02, decay: 0.1, sustain: 0, release: 0.15 }
+                }).toDestination();
+                // Sound for an incorrect delivery
+                wrongSound = new Tone.Synth({
+                    oscillator: { type: 'sine' },
+                    envelope: { attack: 0.01, decay: 0.1, sustain: 0, release: 0.1 }
+                }).toDestination();
+                // Sound for inventory refill
+                refillSound = new Tone.PolySynth(Tone.Synth, {
+                    oscillator: { type: 'square' },
+                    envelope: { attack: 0.01, decay: 0.05, sustain: 0, release: 0.1 }
+                }).toDestination();
+                 // Sound for leveling up
+                levelUpSound = new Tone.PolySynth(Tone.Synth, {
+                    oscillator: { type: 'triangle' },
+                    envelope: { attack: 0.05, decay: 0.2, sustain: 0, release: 0.3 }
+                }).toDestination();
+            }
+
+            function playDeliverySound() { if (deliverySound) deliverySound.triggerAttackRelease("C4", "8n"); }
+            function playCollisionSound() { if (collisionSound) collisionSound.triggerAttackRelease(["C2", "G#1"], "8n"); }
+            function playCorrectSound() { if (correctSound) correctSound.triggerAttackRelease("G5", "8n"); }
+            function playWrongSound() { if (wrongSound) wrongSound.triggerAttackRelease("C4", "8n"); }
+            function playRefillSound() { if (refillSound) refillSound.triggerAttackRelease(["C5", "E5", "G5"], "8n"); }
+            function playLevelUpSound() { if (levelUpSound) levelUpSound.triggerAttackRelease(["C6", "E6", "G6"], "8n"); }
+
+            // --- Game Entities Classes ---
+            class Player {
+                constructor() {
+                    this.x = 100;
+                    this.y = laneY[currentLane];
+                    this.width = 40;
+                    this.height = 60;
+                }
+                
+                // Method to update the player's lane and position
+                setLane(lane) {
+                    currentLane = Math.min(2, Math.max(0, lane));
+                    this.y = laneY[currentLane];
+                }
+
+                draw() {
+                    // Draw the walking figure
+                    ctx.fillStyle = '#fbd38d'; // Skin color for head
+                    ctx.beginPath();
+                    ctx.arc(this.x + 20, this.y - 55, 8, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.closePath();
+
+                    ctx.fillStyle = '#48bb78'; // Body color
+                    ctx.fillRect(this.x + 15, this.y - 50, 10, 30);
+                    
+                    // --- START OF MODIFIED CODE ---
+                    // Draw a single block for the legs, with the same width as the body
+                    ctx.fillStyle = '#f6e05e'; // Leg color
+                    ctx.fillRect(this.x + 15, this.y - 20, 10, 20);
+                    // --- END OF MODIFIED CODE ---
+                }
+
+                update() {
+                    // Player position is now handled by the setLane method
+                }
+            }
+
+            class Gift {
+                constructor(x, y, type) {
+                    this.x = x;
+                    this.y = y;
+                    this.width = 25;
+                    this.height = 25;
+                    this.type = type;
+                    this.speedX = 15; // Throw speed
+                    this.speedY = -1;
+                    this.gravity = 0.5;
+                }
+
+                draw() {
+                    // Draw a gift box shape
+                    ctx.fillStyle = '#a0aec0';
+                    ctx.fillRect(this.x, this.y, this.width, this.height);
+                    ctx.fillStyle = '#718096';
+                    ctx.fillRect(this.x + this.width / 2 - 2, this.y, 4, this.height);
+                    ctx.fillRect(this.x, this.y + this.height / 2 - 2, this.width, 4);
+                    
+                    ctx.fillStyle = '#2d3748';
+                    ctx.font = '10px Inter';
+                    ctx.textAlign = 'center';
+                    // Display gift type's first letter on the box
+                    if (this.type === 'Wireless DECT') {
+                        ctx.fillText('WD', this.x + this.width / 2, this.y + this.height / 2);
+                    } else if (this.type === 'Wired') {
+                        ctx.fillText('W', this.x + this.width / 2, this.y + this.height / 2);
+                    } else {
+                        ctx.fillText(this.type[0], this.x + this.width / 2, this.y + this.height / 2);
+                    }
+                }
+
+                update() {
+                    this.x += this.speedX;
+                    this.y += this.speedY;
+                    this.speedY += this.gravity;
+                }
+            }
+
+            // Updated class to represent a desk instead of a house
+            class Desk {
+                constructor(x, lane, color) {
+                    this.x = x;
+                    this.y = laneY[lane];
+                    this.width = 150;
+                    this.height = 70;
+                    this.lane = lane;
+                    this.order = GIFT_TYPES[Math.floor(Math.random() * GIFT_TYPES.length)];
+                    this.delivered = false;
+                    this.color = color;
+                    this.missed = false;
+                }
+
+                draw() {
+                    // Draw desk top
+                    ctx.fillStyle = this.color;
+                    ctx.fillRect(this.x, this.y - 30, this.width, 30);
+                    
+                    // Draw desk legs
+                    ctx.fillStyle = '#4a5568';
+                    ctx.fillRect(this.x + 10, this.y - 30, 10, 30);
+                    ctx.fillRect(this.x + this.width - 20, this.y - 30, 10, 30);
+
+                    // Draw the order text or a checkmark
+                    if (!this.delivered) {
+                        ctx.fillStyle = '#48bb78';
+                        ctx.font = '16px Inter';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(this.order, this.x + this.width / 2, this.y - 40);
+                    } else {
+                        // Indicate successful delivery
+                        ctx.fillStyle = '#48bb78';
+                        ctx.font = '24px Inter';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('✅', this.x + this.width / 2, this.y - 30);
+                    }
+                }
+
+                update() {
+                    this.x -= gameSpeed;
+                }
+            }
+
+            class Obstacle {
+                constructor(x, lane, type) {
+                    this.x = x;
+                    this.y = laneY[lane];
+                    this.width = 30;
+                    this.height = 30;
+                    this.lane = lane;
+                    this.type = type;
+                }
+
+                draw() {
+                    ctx.fillStyle = '#f6ad55';
+                    ctx.fillRect(this.x, this.y - this.height, this.width, this.height);
+                    ctx.fillStyle = '#2d3748';
+                    ctx.font = '20px sans-serif';
+                    ctx.textAlign = 'center';
+                    if (this.type === 'cone') {
+                        ctx.fillText('�', this.x + this.width / 2, this.y - this.height / 4);
+                    } else {
+                        ctx.fillText('⚫', this.x + this.width / 2, this.y - this.height / 4);
+                    }
+                }
+
+                update() {
+                    this.x -= gameSpeed;
+                }
+            }
+
+            const player = new Player();
+            
+            // --- Game Functions ---
+            
+            function generateInitialInventory() {
+                playerInventory = [];
+                for (let i = 0; i < MAX_INVENTORY; i++) {
+                    const giftType = GIFT_TYPES[Math.floor(Math.random() * GIFT_TYPES.length)];
+                    playerInventory.push(giftType);
+                }
+                currentGiftIndex = 0;
+            }
+
+            function refillInventory() {
+                // Fills the inventory with random gift types
+                const shuffledTypes = [...GIFT_TYPES].sort(() => 0.5 - Math.random());
+                playerInventory = shuffledTypes.slice(0, MAX_INVENTORY);
+                playRefillSound();
+            }
+
+            function updateUI() {
+                scoreDisplay.innerText = `Score: ${score}`;
+                livesDisplay.innerText = `Lives: ${lives}`;
+
+                // Update inventory display
+                inventoryDisplay.innerHTML = '';
+                playerInventory.forEach((gift, index) => {
+                    const giftSlot = document.createElement('div');
+                    giftSlot.className = 'gift-slot';
+                    if (index === currentGiftIndex) {
+                        giftSlot.classList.add('active');
+                    }
+                    let displayText = gift.charAt(0);
+                    if (gift === 'Wireless DECT') {
+                        displayText = 'WD';
+                    } else if (gift === 'Wired') {
+                        displayText = 'W';
+                    }
+                    giftSlot.innerText = displayText;
+                    giftSlot.title = gift; // Show full name on hover
+                    inventoryDisplay.appendChild(giftSlot);
+                });
+            }
+
+            function showMessage(heading, text, buttonText, onButtonClick) {
+                messageHeading.innerText = heading;
+                messageText.innerText = text;
+                messageButton.innerText = buttonText;
+                messageButton.onclick = () => {
+                    messageBox.style.display = 'none';
+                    if (onButtonClick) {
+                        onButtonClick();
+                    }
+                };
+                messageBox.style.display = 'block';
+            }
+
+            function resetGame() {
+                score = 0;
+                lives = 3;
+                desks = [];
+                obstacles = [];
+                gifts = [];
+                currentLane = 1;
+                player.x = 100;
+                player.setLane(1);
+                gameSpeed = 3; // Reset speed
+                scoreForNextSpeedIncrease = 500; // Reset score for next speed increase
+                generateInitialInventory();
+                updateUI();
+                currentOrderDisplay.innerText = '';
+                startButton.disabled = false;
+            }
+
+            function gameOver() {
+                gameState = 'gameOver';
+                playCollisionSound();
+                showMessage("Game Over", `You ran out of lives! Final Score: ${score}`, "Try Again?", resetGame);
+            }
+            
+            // Generate a desk or obstacle
+            function generateObject() {
+                const lane = Math.floor(Math.random() * 3);
+                const type = Math.random() < 0.7 ? 'desk' : 'obstacle';
+                if (type === 'desk') {
+                    // Randomize desk color
+                    const deskColors = ['#718096', '#a0aec0', '#cbd5e0'];
+                    const color = deskColors[Math.floor(Math.random() * deskColors.length)];
+                    desks.push(new Desk(canvas.width + 100, lane, color));
+                } else {
+                    obstacles.push(new Obstacle(canvas.width + 100, lane, Math.random() < 0.5 ? 'cone' : 'pothole'));
+                }
+            }
+
+            function checkCollisions() {
+                // Player-Obstacle collision
+                for (let i = obstacles.length - 1; i >= 0; i--) {
+                    const obs = obstacles[i];
+                    // Check for overlap between player and obstacle rectangles
+                    if (player.y === obs.y && player.x < obs.x + obs.width &&
+                        player.x + player.width > obs.x &&
+                        player.y > obs.y - obs.height &&
+                        player.y - player.height < obs.y) {
+                        playCollisionSound();
+                        lives--;
+                        obstacles.splice(i, 1);
+                        if (lives <= 0) {
+                            gameOver();
+                        }
+                    }
+                }
+
+                // Gift-Desk collision
+                for (let i = gifts.length - 1; i >= 0; i--) {
+                    const g = gifts[i];
+                    for (let j = desks.length - 1; j >= 0; j--) {
+                        const d = desks[j];
+                        // Simple collision check for gift and desk
+                        if (!d.delivered &&
+                            g.x < d.x + d.width &&
+                            g.x + g.width > d.x &&
+                            g.y < d.y &&
+                            g.y + g.height > d.y - d.height) {
+
+                            if (g.type === d.order) {
+                                score += 100;
+                                playCorrectSound();
+                                d.delivered = true;
+                            } else {
+                                score -= 50;
+                                playWrongSound();
+                                d.delivered = true;
+                            }
+                            // Remove gift after delivery, regardless of result
+                            gifts.splice(i, 1);
+                            break;
+                        }
+                    }
+                    // Remove gifts that fall off screen
+                    if (g.x > canvas.width || g.y > canvas.height) {
+                        gifts.splice(i, 1);
+                    }
+                }
+            }
+
+            function gameLoop(currentTime) {
+                if (gameState !== 'playing') return;
+
+                // --- DIFFICULTY INCREASE ---
+                // Increase speed and decrease spawn interval at score milestones
+                if (score >= scoreForNextSpeedIncrease) {
+                    gameSpeed += 0.5;
+                    objectSpawnInterval = Math.max(800, objectSpawnInterval - 100); // Don't go below 800ms
+                    scoreForNextSpeedIncrease += 500;
+                    playLevelUpSound();
+                }
+
+                // Clear canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Draw the road
+                ctx.fillStyle = '#4a5568';
+                ctx.beginPath();
+                ctx.moveTo(0, canvas.height * 0.4);
+                ctx.lineTo(canvas.width, canvas.height * 0.4);
+                ctx.lineTo(canvas.width, canvas.height);
+                ctx.lineTo(0, canvas.height);
+                ctx.closePath();
+                ctx.fill();
+
+                // Draw lanes
+                ctx.strokeStyle = '#e2e8f0';
+                ctx.lineWidth = 3;
+                ctx.setLineDash([15, 15]);
+                ctx.beginPath();
+                ctx.moveTo(0, laneY[0]);
+                ctx.lineTo(canvas.width, laneY[0]);
+                ctx.moveTo(0, laneY[1]);
+                ctx.lineTo(canvas.width, laneY[1]);
+                ctx.moveTo(0, laneY[2]);
+                ctx.lineTo(canvas.width, laneY[2]);
+                ctx.stroke();
+
+                // Update and draw desks
+                desks.forEach(desk => {
+                    desk.update();
+                    desk.draw();
+                });
+
+                // Update and draw obstacles
+                obstacles.forEach(obs => {
+                    obs.update();
+                    obs.draw();
+                });
+                
+                // Update and draw gifts
+                gifts.forEach(gift => {
+                    gift.update();
+                    gift.draw();
+                });
+
+                // Update and draw player
+                player.draw();
+
+                // Remove off-screen objects and check for missed desks
+                desks = desks.filter(d => {
+                    if (d.x + d.width < 0 && !d.delivered) {
+                        // Missed a delivery
+                        score -= 25;
+                        playWrongSound();
+                        return false;
+                    }
+                    return d.x + d.width > 0;
+                });
+                obstacles = obstacles.filter(o => o.x + o.width > 0);
+                
+                // Generate new objects
+                if (currentTime - lastObjectTime > objectSpawnInterval) {
+                    generateObject();
+                    lastObjectTime = currentTime;
+                }
+
+                // Check collisions
+                checkCollisions();
+                updateUI();
+                
+                requestAnimationFrame(gameLoop);
+            }
+
+            // --- Event Listeners and Game Flow ---
+            function handleResize() {
+                const gameContainer = document.querySelector('.game-container');
+                const newWidth = gameContainer.offsetWidth - 64;
+                const newHeight = newWidth * 0.75; // Maintain aspect ratio
+                
+                canvas.width = newWidth;
+                canvas.height = newHeight;
+                
+                // Recalculate lane positions
+                laneY = [
+                    canvas.height * 0.4, 
+                    canvas.height * 0.55, 
+                    canvas.height * 0.7
+                ];
+                player.setLane(currentLane);
+            }
+
+            window.addEventListener('keydown', (e) => {
+                if (gameState !== 'playing') return;
+
+                switch (e.key) {
+                    case 'ArrowUp':
+                        player.setLane(currentLane - 1);
+                        break;
+                    case 'ArrowDown':
+                        player.setLane(currentLane + 1);
+                        break;
+                    case 'ArrowRight':
+                        currentGiftIndex = (currentGiftIndex + 1) % playerInventory.length;
+                        break;
+                    case 'ArrowLeft':
+                        currentGiftIndex = (currentGiftIndex - 1 + playerInventory.length) % playerInventory.length;
+                        break;
+                    case ' ': // Spacebar to throw
+                        e.preventDefault();
+                        if (playerInventory.length > 0) {
+                            const giftType = playerInventory[currentGiftIndex];
+                            gifts.push(new Gift(player.x + player.width, player.y - player.height, giftType));
+                            playDeliverySound();
+                            
+                            // Consume the gift from inventory
+                            playerInventory.splice(currentGiftIndex, 1);
+                            
+                            // If inventory is empty, refill it
+                            if (playerInventory.length === 0) {
+                                refillInventory();
+                            }
+                            
+                            // Adjust current index if it's out of bounds after removing
+                            if (currentGiftIndex >= playerInventory.length) {
+                                currentGiftIndex = 0;
+                            }
+                        }
+                        break;
+                }
+                 updateUI();
+            });
+            
+            startButton.addEventListener('click', async () => {
+                if (gameState === 'menu') {
+                    gameState = 'playing';
+                    // Start the AudioContext with a user gesture
+                    await Tone.start();
+                    setupAudio();
+                    resetGame();
+                    startButton.disabled = true;
+                    gameLoop(0); // Start the game loop with initial time 0
+                }
+            });
+            
+            resetButton.addEventListener('click', () => {
+                if (gameState !== 'menu') {
+                    resetGame();
+                    showMessage("Game Reset", "Press Start to play again.", "OK", () => {
+                        startButton.disabled = false;
+                    });
+                }
+            });
+            
+            // Initial setup
+            handleResize();
+            generateInitialInventory();
+            window.addEventListener('resize', handleResize);
+            
+            showMessage(
+                "Delivering Office Gifts", 
+                "Use Arrow Up/Down to switch lanes. Use Arrow Left/Right to change gifts. Press Spacebar to throw. Match the headset type to the desk's order!", 
+                "Start Game", 
+                () => {
+                    startButton.disabled = false;
+                }
+            );
+            updateUI();
+        };
+    </script>
+</body>
+</html>

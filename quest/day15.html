@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Holiday Memory Match</title>
+    <!-- Tailwind CSS CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Firebase SDKs -->
+    <script type="module" src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #00353d; /* EPOS Dark Petrol */
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem;
+            padding: 3rem;
+            border-radius: 20px;
+            background-color: #131313;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            max-width: 700px;
+            width: 95%;
+            text-align: center;
+        }
+
+        .stats-bar {
+            @apply flex justify-between w-full text-lg;
+        }
+
+        .stat-item {
+            @apply flex flex-col items-center;
+        }
+
+        .btn {
+            @apply px-8 py-3 rounded-full font-bold transition-all duration-300 transform hover:scale-105;
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, #00A693, #00806D);
+            @apply text-white;
+            box-shadow: 0 4px 15px rgba(0, 166, 147, 0.4);
+        }
+
+        .message-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 400px;
+            padding: 2rem;
+            background-color: #131313;
+            border-radius: 1rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            display: none;
+        }
+
+        .message-box h2 {
+            @apply text-xl font-bold mb-4;
+        }
+
+        .message-box p {
+            @apply mb-4;
+        }
+
+        #game-board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .card {
+            background-color: #2d3748;
+            border-radius: 8px;
+            cursor: pointer;
+            aspect-ratio: 1 / 1;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+            position: relative;
+        }
+        
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+        
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            border-radius: 8px;
+        }
+        
+        .card-back {
+            background-color: #00A693;
+            transform: rotateY(0deg);
+        }
+        
+        .card-front {
+            background-color: #ffffff;
+            color: #131313;
+            transform: rotateY(180deg);
+        }
+        
+        .card.matched {
+            pointer-events: none;
+            background-color: rgba(0, 166, 147, 0.2); /* Faded green */
+            box-shadow: 0 4px 15px rgba(0, 166, 147, 0.4);
+        }
+
+        #leaderboard {
+            @apply w-full max-w-sm mt-8 p-4 bg-gray-800 rounded-lg shadow-inner;
+        }
+        
+        #leaderboard h3 {
+            @apply text-xl font-bold mb-4 text-center;
+        }
+
+        #leaderboard ol {
+            @apply list-decimal list-inside;
+        }
+
+        #leaderboard li {
+            @apply flex justify-between p-2 my-1 rounded-md bg-gray-700;
+        }
+    </style>
+</head>
+<body class="bg-[#00353d]">
+    <div class="game-container">
+        <h1 class="text-4xl font-bold">Holiday Memory Match</h1>
+
+        <div class="stats-bar">
+            <div class="stat-item">
+                <span class="text-gray-400">Time</span>
+                <span id="timer-display" class="font-bold">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="text-gray-400">Pairs</span>
+                <span id="score-display" class="font-bold">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="text-gray-400">Best</span>
+                <span id="best-score-display" class="font-bold">N/A</span>
+            </div>
+        </div>
+
+        <div id="game-board"></div>
+
+        <button id="start-button" class="btn btn-primary mt-4">Start Game</button>
+        
+        <div id="leaderboard">
+            <h3>Leaderboard</h3>
+            <ol id="leaderboard-list"></ol>
+        </div>
+
+        <!-- Message Box -->
+        <div id="message-box" class="message-box">
+            <h2 id="message-heading"></h2>
+            <p id="message-text"></p>
+            <button id="message-button" class="btn btn-primary w-full">OK</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, doc, getDoc, setDoc, collection, getDocs, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyC1b-Z-nqidDr032kFAMExOdodoew3lLC4",
+            authDomain: "eposchristmasgames.firebaseapp.com",
+            projectId: "eposchristmasgames",
+            storageBucket: "eposchristmasgames.firebasestorage.app",
+            messagingSenderId: "171259425916",
+            appId: "1:171259425916:web:2d2c3812441e56b7d585f9",
+            measurementId: "G-K09ZYR6ZQ2"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        let userId = null;
+
+        // Message Box elements
+        const messageBox = document.getElementById('message-box');
+        const messageHeading = document.getElementById('message-heading');
+        const messageText = document.getElementById('message-text');
+        const messageButton = document.getElementById('message-button');
+
+        // Game UI elements
+        const startButton = document.getElementById('start-button');
+        const timerDisplay = document.getElementById('timer-display');
+        const scoreDisplay = document.getElementById('score-display');
+        const bestScoreDisplay = document.getElementById('best-score-display');
+        const gameBoard = document.getElementById('game-board');
+        const leaderboardList = document.getElementById('leaderboard-list');
+
+        // Game state
+        let gameState = 'menu';
+        let matchedPairs = 0;
+        let timer = 0;
+        let intervalId = null;
+        let firstCard = null;
+        let secondCard = null;
+        let lockBoard = false;
+
+        const icons = ['🎅', '🎄', '🎁', '🔔', '❄️', '🦌', '☃️', '🍪'];
+        const cardValues = [...icons, ...icons]; // Create 8 pairs for 16 cards
+
+        // --- Helper Functions ---
+
+        /**
+         * Shows a custom message box instead of using the browser's alert().
+         * @param {string} heading The title of the message.
+         * @param {string} text The main content of the message.
+         * @param {function} onButtonClick A callback function to run when the button is clicked.
+         */
+        const showMessageBox = (heading, text, onButtonClick) => {
+            messageHeading.innerText = heading;
+            messageText.innerHTML = text;
+            messageButton.onclick = () => {
+                messageBox.style.display = 'none';
+                if (onButtonClick) onButtonClick();
+            };
+            messageBox.style.display = 'block';
+        };
+
+        /**
+         * Shuffles an array using the Fisher-Yates algorithm.
+         * @param {Array} array The array to shuffle.
+         * @returns {Array} The shuffled array.
+         */
+        const shuffle = (array) => {
+            let currentIndex = array.length, randomIndex;
+            while (currentIndex !== 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        };
+        
+        // --- Firebase Functions ---
+        const saveHighScore = async (score) => {
+            if (!userId) {
+                console.error("User not authenticated. Cannot save score.");
+                return false;
+            }
+            try {
+                const docRef = doc(db, "highscores", userId);
+                const docSnap = await getDoc(docRef);
+                
+                let currentBest = docSnap.exists() ? docSnap.data().time : Infinity;
+                if (score < currentBest) {
+                    await setDoc(docRef, { time: score, appId: appId, userId: userId });
+                    console.log("High score saved successfully!");
+                    return true;
+                }
+                return false;
+
+            } catch (e) {
+                console.error("Error saving document: ", e);
+                return false;
+            }
+        };
+
+        const loadHighScore = async () => {
+            if (!userId) {
+                console.error("User not authenticated. Cannot load score.");
+                bestScoreDisplay.textContent = 'N/A';
+                return;
+            }
+            try {
+                const docRef = doc(db, "highscores", userId);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    bestScoreDisplay.textContent = docSnap.data().time;
+                } else {
+                    bestScoreDisplay.textContent = 'N/A';
+                    console.log("No high score found for this user.");
+                }
+            } catch (e) {
+                console.error("Error loading document:", e);
+            }
+        };
+        
+        const loadLeaderboard = async () => {
+            if (!userId) {
+                console.error("User not authenticated. Cannot load leaderboard.");
+                return;
+            }
+            try {
+                const q = query(collection(db, "highscores"));
+                const querySnapshot = await getDocs(q);
+                let scores = [];
+                querySnapshot.forEach((doc) => {
+                    scores.push({
+                        time: doc.data().time,
+                        userId: doc.data().userId
+                    });
+                });
+
+                scores.sort((a, b) => a.time - b.time);
+                const topScores = scores.slice(0, 10);
+                
+                leaderboardList.innerHTML = '';
+                topScores.forEach(score => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<span>${score.time}s</span><span>${score.userId.substring(0, 8)}...</span>`;
+                    leaderboardList.appendChild(li);
+                });
+
+            } catch (e) {
+                console.error("Error loading leaderboard: ", e);
+            }
+        };
+
+        // --- Game Logic ---
+
+        const flipCard = (event) => {
+            if (lockBoard) return;
+            const card = event.currentTarget;
+            if (card === firstCard) return;
+
+            card.classList.add('flipped');
+
+            if (!firstCard) {
+                firstCard = card;
+                return;
+            }
+
+            secondCard = card;
+            checkForMatch();
+        };
+
+        const checkForMatch = () => {
+            const isMatch = firstCard.dataset.value === secondCard.dataset.value;
+            isMatch ? disableCards() : unflipCards();
+        };
+
+        const disableCards = () => {
+            firstCard.removeEventListener('click', flipCard);
+            secondCard.removeEventListener('click', flipCard);
+            
+            firstCard.classList.add('matched');
+            secondCard.classList.add('matched');
+
+            matchedPairs++;
+            scoreDisplay.textContent = matchedPairs;
+            resetBoard();
+
+            if (matchedPairs === icons.length) {
+                endGame();
+            }
+        };
+
+        const unflipCards = () => {
+            lockBoard = true;
+            setTimeout(() => {
+                firstCard.classList.remove('flipped');
+                secondCard.classList.remove('flipped');
+                resetBoard();
+            }, 1000);
+        };
+
+        const resetBoard = () => {
+            [firstCard, secondCard, lockBoard] = [null, null, false];
+        };
+
+        const createBoard = () => {
+            gameBoard.innerHTML = '';
+            matchedPairs = 0;
+            scoreDisplay.textContent = matchedPairs;
+            timer = 0;
+            timerDisplay.textContent = timer;
+            resetBoard();
+
+            const shuffledCards = shuffle([...cardValues]);
+
+            shuffledCards.forEach(value => {
+                const card = document.createElement('div');
+                card.classList.add('card');
+                card.dataset.value = value;
+                
+                const cardBack = document.createElement('div');
+                cardBack.classList.add('card-face', 'card-back');
+                cardBack.innerHTML = '🎁';
+
+                const cardFront = document.createElement('div');
+                cardFront.classList.add('card-face', 'card-front');
+                cardFront.innerText = value;
+                
+                card.appendChild(cardBack);
+                card.appendChild(cardFront);
+                card.addEventListener('click', flipCard);
+                gameBoard.appendChild(card);
+            });
+        };
+
+        const startGame = () => {
+            if (gameState === 'playing') return;
+
+            gameState = 'playing';
+            createBoard();
+            startButton.style.display = 'none';
+
+            intervalId = setInterval(() => {
+                timer++;
+                timerDisplay.textContent = timer;
+            }, 1000);
+        };
+
+        const endGame = async () => {
+            gameState = 'gameOver';
+            clearInterval(intervalId);
+
+            const isNewHighScore = await saveHighScore(timer);
+            loadLeaderboard();
+            let currentBestScore = bestScoreDisplay.textContent;
+
+            if (isNewHighScore) {
+                showMessageBox(
+                    'New High Score!',
+                    `You matched all the pairs in a new record time of ${timer} seconds! This score is saved to your database.`,
+                    () => {
+                        startButton.style.display = 'block';
+                        loadHighScore();
+                    }
+                );
+            } else {
+                showMessageBox(
+                    'Mission Complete!',
+                    `You sorted all the gifts in ${timer} seconds! Your current best time is ${currentBestScore} seconds.`,
+                    () => {
+                        startButton.style.display = 'block';
+                    }
+                );
+            }
+        };
+
+        // --- Event Listeners and Initial Setup ---
+        startButton.addEventListener('click', startGame);
+
+        window.onload = function() {
+            // Wait for auth state to be ready
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    userId = user.uid;
+                    loadHighScore();
+                    loadLeaderboard();
+                } else {
+                    // Sign in anonymously if not already authenticated
+                    signInAnonymously(auth).then(() => {
+                        // User will be available in the next onAuthStateChanged event
+                    }).catch((error) => {
+                        console.error("Anonymous sign-in failed: ", error);
+                    });
+                }
+            });
+
+            showMessageBox(
+                'Holiday Memory Match',
+                'Click on two cards to find a matching pair. Match all the cards in the shortest time possible to set a new record!',
+                () => {
+                    // This callback runs when the user clicks OK
+                }
+            );
+        };
+    </script>
+</body>
+</html>

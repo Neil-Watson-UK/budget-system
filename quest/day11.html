@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Shift</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d1117;
+            color: #e2e8f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 1rem;
+            overflow: hidden;
+            position: relative;
+        }
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+            padding: 2rem;
+            border-radius: 1.5rem;
+            background-color: #161b22;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            position: relative;
+            z-index: 1;
+        }
+        canvas {
+            background-color: #000;
+            border-radius: 0.5rem;
+            border: 2px solid #0ff;
+            box-shadow: 0 0 15px #0ff;
+            max-width: 100%;
+        }
+        .button {
+            padding: 0.75rem 1.5rem;
+            font-weight: bold;
+            border-radius: 9999px;
+            background: linear-gradient(145deg, #0ff, #007788);
+            box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.3), -5px -5px 10px rgba(255, 255, 255, 0.1);
+            color: white;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+        .button:hover {
+            transform: translateY(-2px);
+            background: linear-gradient(145deg, #00ffff, #008899);
+            box-shadow: 7px 7px 14px rgba(0, 0, 0, 0.5), -7px -7px 14px rgba(255, 255, 255, 0.2);
+        }
+        .button:active {
+            transform: translateY(0);
+            box-shadow: inset 5px 5px 10px rgba(0, 0, 0, 0.5);
+        }
+        .score-display {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #ff00ff;
+            text-shadow: 0 0 10px #ff00ff;
+        }
+        .message-box {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.75);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+        .message-card {
+            background-color: #1a202c;
+            padding: 2rem;
+            border-radius: 1rem;
+            text-align: center;
+            max-width: 90vw;
+            width: 350px;
+            box-shadow: 0 0 20px #0ff;
+        }
+        /* Tron Grid effect */
+        .grid-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            background: radial-gradient(circle, rgba(0, 255, 255, 0.1), rgba(0, 0, 0, 0.5)),
+                        linear-gradient(to bottom, transparent 0%, rgba(0, 255, 255, 0.2) 5%, transparent 100%),
+                        linear-gradient(to right, transparent 0%, rgba(0, 255, 255, 0.2) 5%, transparent 100%);
+            background-size: 50px 50px, 100% 50px, 50px 100%;
+            animation: grid-scroll 2s linear infinite;
+        }
+
+        @keyframes grid-scroll {
+            from { background-position: 0 0; }
+            to { background-position: 0 50px; }
+        }
+        
+        .shaking-canvas {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+            transform: translate3d(0, 0, 0);
+            backface-visibility: hidden;
+            perspective: 1000px;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200">
+    <div class="grid-bg"></div>
+    <div class="game-container">
+        <h1 class="text-3xl font-bold mb-4" style="color:#0ff; text-shadow: 0 0 10px #0ff;">Quantum Shift</h1>
+        <div id="scoreDisplay" class="score-display mb-4">Score: 0</div>
+        <canvas id="gameCanvas"></canvas>
+        <div class="flex flex-row space-x-4">
+            <button id="shiftButton" class="button">Shift Dimension</button>
+        </div>
+    </div>
+
+    <!-- Message Box UI -->
+    <div id="messageBox" class="message-box hidden">
+        <div class="message-card">
+            <h2 id="messageHeading" class="text-3xl font-bold mb-4" style="color:#0ff; text-shadow: 0 0 10px #0ff;"></h2>
+            <p id="messageText" class="text-lg mb-6"></p>
+            <button id="messageButton" class="button"></button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const messageBox = document.getElementById('messageBox');
+        const messageHeading = document.getElementById('messageHeading');
+        const messageText = document.getElementById('messageText');
+        const messageButton = document.getElementById('messageButton');
+        const shiftButton = document.getElementById('shiftButton');
+
+        let gameState = 'menu'; // 'menu', 'playing', 'gameOver'
+        let animationFrameId;
+        let score = 0;
+        let lastTime = 0;
+        let obstacleSpawnInterval = 800;
+        let lastObstacleTime = 0;
+        let obstacleSpeed = 3;
+
+        const dimensions = ['blue', 'red', 'green'];
+        let playerDimensionIndex = 0;
+        let player = {
+            x: 0,
+            y: 0,
+            width: 40,
+            height: 40,
+            vx: 0,
+            speed: 5,
+            get dimension() {
+                return dimensions[playerDimensionIndex];
+            }
+        };
+
+        const colors = {
+            'blue': '#00ffff',
+            'red': '#ff00ff',
+            'green': '#00ff7f'
+        };
+
+        let obstacles = [];
+
+        // Tone.js Synth Setup for melodic pass sound
+        const passSynth = new Tone.Synth({
+            oscillator: { type: 'sine' },
+            envelope: {
+                attack: 0.01,
+                decay: 0.1,
+                sustain: 0.2,
+                release: 0.5
+            }
+        }).toDestination();
+
+        const notes = ['C4', 'D4', 'E4', 'G4', 'A4', 'C5'];
+        let noteIndex = 0;
+
+        function playPassSound() {
+            const note = notes[noteIndex];
+            passSynth.triggerAttackRelease(note, '8n');
+            noteIndex = (noteIndex + 1) % notes.length;
+        }
+
+        // Continuous background synth setup
+        let continuousSynth = new Tone.PolySynth(Tone.Synth, {
+            oscillator: { type: 'sawtooth' },
+            envelope: {
+                attack: 0.05,
+                decay: 0.1,
+                sustain: 0.2,
+                release: 0.5
+            }
+        }).toDestination();
+        
+        // This pattern will now be started only after the user clicks "Start Game"
+        let continuousPattern = new Tone.Pattern((time, note) => {
+            continuousSynth.triggerAttackRelease(note, "8n", time);
+        }, ["C3", "G3", "C4", "E4", "G4"]);
+
+        function setupAudio() {
+            continuousPattern.interval = "8n"; // Initial tempo
+            continuousPattern.start(0);
+            Tone.Transport.start();
+        }
+
+        function startGame() {
+            gameState = 'playing';
+            score = 0;
+            obstacles = [];
+            obstacleSpeed = 3;
+            obstacleSpawnInterval = 800;
+            playerDimensionIndex = 0;
+
+            // Initial player position
+            player.x = (canvas.width / 2) - (player.width / 2);
+            player.y = canvas.height - player.height - 30;
+            player.vx = 0;
+
+            messageBox.style.display = 'none';
+            lastTime = performance.now();
+            lastObstacleTime = lastTime;
+            
+            // Remove screen shake class
+            canvas.classList.remove('shaking-canvas');
+
+            // Start audio on user gesture
+            Tone.start().then(() => {
+                setupAudio();
+            });
+
+            gameLoop(0);
+        }
+
+        function createObstacle() {
+            const obstacleWidth = 30;
+            const obstacleHeight = 60;
+            const x = Math.random() * (canvas.width - obstacleWidth);
+            const dimension = dimensions[Math.floor(Math.random() * dimensions.length)];
+
+            obstacles.push({
+                x: x,
+                y: -obstacleHeight,
+                width: obstacleWidth,
+                height: obstacleHeight,
+                dimension: dimension
+            });
+        }
+
+        function update(deltaTime) {
+            if (gameState !== 'playing') return;
+
+            // Update score and difficulty
+            score += deltaTime / 1000;
+            obstacleSpeed = 3 + Math.floor(score / 5) * 0.75;
+            obstacleSpawnInterval = Math.max(300, 800 - Math.floor(score / 5) * 50);
+
+            // Update the musical tempo based on game speed
+            continuousPattern.interval = `${Math.max(0.05, 0.15 - (obstacleSpeed * 0.01))}s`;
+
+            scoreDisplay.textContent = `Score: ${Math.floor(score)}`;
+
+            // Player movement
+            player.x += player.vx;
+            // Clamp player position within canvas bounds
+            if (player.x < 0) player.x = 0;
+            if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
+
+            // Move and remove obstacles
+            obstacles.forEach(obstacle => {
+                obstacle.y += obstacleSpeed * (deltaTime / 16.67);
+            });
+            const oldObstacles = obstacles;
+            obstacles = obstacles.filter(obstacle => obstacle.y < canvas.height);
+
+            // Check for successful passes to play a sound
+            const passedObstacles = oldObstacles.filter(obstacle => obstacle.y >= canvas.height && player.dimension !== obstacle.dimension);
+            if (passedObstacles.length > 0) {
+                playPassSound();
+            }
+
+            // Collision detection
+            obstacles.forEach(obstacle => {
+                if (
+                    player.x < obstacle.x + obstacle.width &&
+                    player.x + player.width > obstacle.x &&
+                    player.y < obstacle.y + obstacle.height &&
+                    player.y + player.height > obstacle.y &&
+                    player.dimension === obstacle.dimension
+                ) {
+                    gameOver();
+                }
+            });
+
+            // Spawn new obstacles
+            lastObstacleTime += deltaTime;
+            if (lastObstacleTime > obstacleSpawnInterval) {
+                createObstacle();
+                lastObstacleTime = 0;
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw obstacles
+            obstacles.forEach(obstacle => {
+                ctx.fillStyle = colors[obstacle.dimension];
+                ctx.shadowColor = colors[obstacle.dimension];
+                ctx.shadowBlur = 15;
+                ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+                ctx.shadowBlur = 0;
+            });
+
+            // Draw player as a triangle
+            ctx.fillStyle = colors[player.dimension];
+            ctx.shadowColor = colors[player.dimension];
+            ctx.shadowBlur = 20;
+
+            ctx.beginPath();
+            ctx.moveTo(player.x + player.width / 2, player.y);
+            ctx.lineTo(player.x, player.y + player.height);
+            ctx.lineTo(player.x + player.width, player.y + player.height);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.shadowBlur = 0;
+        }
+
+        function gameLoop(currentTime) {
+            const deltaTime = currentTime - lastTime;
+            lastTime = currentTime;
+            update(deltaTime);
+            draw();
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
+
+        function gameOver() {
+            gameState = 'gameOver';
+            cancelAnimationFrame(animationFrameId);
+            Tone.Transport.stop();
+            canvas.classList.add('shaking-canvas'); // Add screen shake class on game over
+            showMessage("Game Over!", `Your final score is: ${Math.floor(score)}`, "Play Again", startGame);
+        }
+
+        function handleQuantumShift() {
+            if (gameState === 'playing') {
+                playerDimensionIndex = (playerDimensionIndex + 1) % dimensions.length;
+            }
+        }
+
+        function showMessage(heading, text, buttonText, onButtonClick) {
+            messageHeading.innerHTML = heading;
+            messageText.innerHTML = text;
+            messageButton.innerHTML = buttonText;
+            messageButton.onclick = () => {
+                messageBox.style.display = 'none';
+                if (onButtonClick) onButtonClick();
+            };
+            messageBox.style.display = 'flex';
+        }
+
+        // Event listeners for keyboard
+        document.addEventListener('keydown', (e) => {
+            if (gameState === 'playing') {
+                if (e.key === 'ArrowLeft' || e.key === 'a') {
+                    player.vx = -player.speed;
+                } else if (e.key === 'ArrowRight' || e.key === 'd') {
+                    player.vx = player.speed;
+                } else if (e.key === ' ' || e.key === 'q') {
+                    handleQuantumShift();
+                }
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (gameState === 'playing') {
+                if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'ArrowRight' || e.key === 'd') {
+                    player.vx = 0;
+                }
+            }
+        });
+
+        // Touch event listener for mobile
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touchX = e.touches[0].clientX;
+            const canvasRect = canvas.getBoundingClientRect();
+            const relativeX = touchX - canvasRect.left;
+
+            if (relativeX < canvas.width / 2) {
+                player.vx = -player.speed;
+            } else {
+                player.vx = player.speed;
+            }
+        });
+
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            player.vx = 0;
+        });
+
+        // Dedicated shift button listener
+        shiftButton.addEventListener('click', handleQuantumShift);
+
+        // Initial setup and resize handler
+        function handleResize() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = Math.min(window.innerHeight * 0.8, 600);
+            player.x = (canvas.width / 2) - (player.width / 2);
+            player.y = canvas.height - player.height - 30;
+            draw();
+        }
+
+        window.onload = function() {
+            handleResize();
+            window.addEventListener('resize', handleResize);
+            showMessage(
+                "Quantum Shift",
+                "Use **Left/Right Arrows** or **A/D** to move. Press **Spacebar** or **Q** to shift dimensions. You now have **three** dimensions to avoid obstacles! Or, you can use the **Shift Dimension** button below!",
+                "Start Game",
+                startGame
+            );
+        };
+    </script>
+</body>
+</html>

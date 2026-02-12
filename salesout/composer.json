@@ -1,0 +1,18 @@
+{
+    "name": "epos/salesout",
+    "description": "Distributor Sales Out Report - standardise and analyse distributor sales",
+    "require": {
+        "php": "^8.1",
+        "phpoffice/phpspreadsheet": "^1.29"
+    },
+    "config": {
+        "platform": {
+            "php": "8.1"
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "SalesOut\\": "src/"
+        }
+    }
+}

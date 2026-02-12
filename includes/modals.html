@@ -1,0 +1,149 @@
+<div id="modalBackdrop" class="modal-backdrop" style="display: none;"></div>
+
+<!-- Search Emails Modal -->
+<div id="searchEmailModal" class="app-modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close-button" data-modal="searchEmailModal">&times;</span>
+        <h2>Search Existing Emails</h2>
+        <div class="modal-body">
+            <div class="search-inputs">
+                <div class="form-group">
+                    <label for="searchSubjectLine">Subject Line</label>
+                    <input type="text" id="searchSubjectLine" placeholder="Enter subject keywords">
+                </div>
+                <div class="form-group">
+                    <label for="searchReferenceCode">Reference Code</label>
+                    <input type="text" id="searchReferenceCode" placeholder="Enter reference code">
+                </div>
+                <div class="form-group">
+                    <label for="searchAuthor">Author</label>
+                    <input type="text" id="searchAuthor" placeholder="Enter author name">
+                </div>
+                <div class="form-group">
+                    <label for="searchSenderEmail">Sender Email</label>
+                    <input type="email" id="searchSenderEmail" placeholder="Enter sender email">
+                </div>
+                <div class="form-group">
+                    <label for="searchRegion">Region</label>
+                    <input type="text" id="searchRegion" placeholder="Enter region">
+                </div>
+                <div class="form-group">
+                    <label for="searchSendTime">Sent After Date</label>
+                    <input type="date" id="searchSendTime">
+                </div>
+            </div>
+            <button id="performSearchBtn" class="action-button">Search Emails</button>
+            <div class="search-results-container">
+                <h3>Search Results</h3>
+                <div id="searchResults" class="email-list-container">
+                    <!-- Search results will be loaded here dynamically -->
+                    <p>No results yet. Perform a search.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div id="confirmModal" class="app-modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close-button" data-modal="confirmModal">&times;</span>
+        <h2 id="confirmModalTitle"></h2>
+        <p id="confirmModalText"></p>
+        <div class="modal-buttons">
+            <button id="confirmYesBtn" class="action-button">Yes</button>
+            <button id="confirmNoBtn" class="cancel-button">No</button>
+            <button id="confirmOkBtn" class="action-button" style="display: none;">OK</button>
+        </div>
+    </div>
+</div>
+
+<!-- Message Modal -->
+<div id="messageModal" class="app-modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close-button" data-modal="messageModal">&times;</span>
+        <h2 id="messageModalTitle"></h2>
+        <p id="messageModalText"></p>
+        <button id="messageModalOkBtn" class="action-button">OK</button> <!-- Changed: Added ID and removed onclick -->
+    </div>
+</div>
+
+<!-- Personalization Tag Management Modal -->
+<div id="personalizationTagModal" class="app-modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close-button" data-modal="personalizationTagModal">&times;</span>
+        <h2>Manage Personalization Tags</h2>
+        <p>Add new personalization tags or view available ones.</p>
+        <div class="form-group">
+            <label for="newTagInput">New Tag (e.g., {{Company_Name}})</label>
+            <input type="text" id="newTagInput" placeholder="Enter new tag"/>
+        </div>
+        <button id="addTagBtn" class="action-button">Add Tag</button>
+        <h3>Available Tags:</h3>
+        <ul id="availableTagsList" class="tag-list">
+            <!-- Tags will be loaded here dynamically -->
+        </ul>
+        <button id="closeTagModalBtn" class="action-button" data-modal="personalizationTagModal">Done</button>
+    </div>
+</div>
+
+<!-- Image Selection and Upload Modal -->
+<div id="imageModal" class="app-modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close-button" data-modal="imageModal">&times;</span>
+        <h2>Select or Upload an Image</h2>
+        <div class="modal-body">
+            <!-- Image Upload Section -->
+            <h3>Upload New Image</h3>
+            <form id="imageUploadForm" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="imageFile">Choose Image File:</label>
+                    <input type="file" id="imageFile" name="imageFile" accept="image/*">
+                </div>
+                <div class="form-group">
+                    <label for="imageDescription">Description/Alt Text:</label>
+                    <input type="text" id="imageDescription" name="imageDescription" placeholder="e.g., Company Logo, Product Shot">
+                </div>
+                <div class="form-group">
+                    <label>Image Type:</label>
+                    <div class="flex flex-wrap gap-4">
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="imageType" value="main_article" class="form-radio" checked>
+                            <span class="ml-2">Main Article (600px wide)</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="imageType" value="two_column_article" class="form-radio">
+                            <span class="ml-2">Two Column Article (280px wide)</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="imageType" value="background" class="form-radio">
+                            <span class="ml-2">Background (1920x1080px)</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="imageType" value="custom" class="form-radio">
+                            <span class="ml-2">Custom Size (specify below)</span>
+                        </label>
+                    </div>
+                </div>
+                <div id="customImageSizeGroup" class="form-group" style="display: none;">
+                    <label for="customWidth">Custom Width (px):</label>
+                    <input type="number" id="customWidth" name="customWidth" placeholder="e.g., 400" min="1">
+                    <label for="customHeight">Custom Height (px) (optional):</label>
+                    <input type="number" id="customHeight" name="customHeight" placeholder="e.g., 300" min="1">
+                </div>
+                <button type="submit" id="uploadImageBtn" class="action-button mt-4">Upload & Insert Image</button>
+            </form>
+
+            <hr class="my-6 border-gray-300">
+
+            <!-- Existing Image Library Section -->
+            <h3>Select from Library</h3>
+            <input type="text" id="imageLibrarySearch" placeholder="Search images by description or filename..." class="w-full p-2 border rounded mb-4">
+            <div id="imageLibrary" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 overflow-y-auto max-h-64 p-2 border rounded bg-gray-50">
+                <!-- Image thumbnails will be loaded here dynamically -->
+                <p class="text-center text-gray-500 col-span-full">No images in library yet.</p>
+            </div>
+            <button id="insertSelectedImageBtn" class="action-button mt-4" disabled>Insert Selected Image</button>
+        </div>
+    </div>
+</div>

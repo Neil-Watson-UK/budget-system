@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whack-A-Noise</title>
+    <!-- Tailwind CSS for a clean, responsive layout -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c;
+            color: #e2e8f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 1rem;
+            overflow: hidden; /* Prevent floating score from creating scrollbars */
+        }
+
+        .game-container {
+            position: relative;
+            background-color: #2d3748;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            padding: 2.5rem;
+            max-width: 90vw;
+            width: 500px;
+            text-align: center;
+        }
+        
+        .game-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #58a6ff;
+            text-shadow: 0 0 10px rgba(88, 166, 255, 0.5);
+            margin-bottom: 1rem;
+        }
+
+        .game-ui {
+            display: flex;
+            justify-content: space-between;
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+        }
+
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .hole {
+            width: 100px;
+            height: 100px;
+            background-color: #4a5568;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            cursor: pointer;
+            overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 5px 10px rgba(0, 0, 0, 0.3);
+            transition: transform 0.1s ease-in-out;
+        }
+
+        .icon {
+            font-size: 3rem;
+            position: absolute;
+            bottom: -100px; /* Hidden below the hole */
+            transition: bottom 0.3s ease-in-out;
+            pointer-events: none; /* Allows clicks to pass through to the hole */
+        }
+
+        .hole.up .icon {
+            bottom: 0px; /* Popped up */
+        }
+        
+        .hit {
+            background-color: #72f1b4;
+        }
+
+        .miss {
+            background-color: #f85149;
+        }
+
+        .control-button {
+            padding: 0.75rem 2rem;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            background-color: #58a6ff;
+            color: #1a202c;
+            margin-top: 2rem;
+        }
+
+        .control-button:hover {
+            background-color: #79c0ff;
+            transform: translateY(-2px);
+        }
+
+        .rules-section {
+            display: flex;
+            justify-content: space-around;
+            text-align: left;
+            margin-top: 1.5rem;
+            font-size: 1rem;
+            color: #a0aec0;
+        }
+
+        .rules-column {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .rules-column .icon-list span {
+            font-size: 1.5rem;
+            margin-right: 0.5rem;
+        }
+
+        /* Message Box Styling */
+        .message-box {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(26, 32, 44, 0.95);
+            border: 2px solid #58a6ff;
+            border-radius: 1rem;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            display: none;
+        }
+        .message-box h2 {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #58a6ff;
+            margin-bottom: 1rem;
+        }
+        .message-box p {
+            font-size: 1.1rem;
+            color: #ffffff;
+        }
+        .message-box button {
+            background-color: #58a6ff;
+            color: #1a202c;
+            margin-top: 1.5rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+        .message-box button:hover {
+            background-color: #79c0ff;
+        }
+
+        /* Floating Score Animation */
+        .floating-score {
+            position: absolute;
+            font-size: 1.5rem;
+            font-weight: bold;
+            pointer-events: none;
+            opacity: 0;
+            animation: floatUp 1s ease-out forwards;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+            z-index: 500;
+        }
+
+        .floating-score.plus {
+            color: #72f1b4;
+        }
+        .floating-score.minus {
+            color: #f85149;
+        }
+        .floating-score.zero {
+            color: #a0aec0; /* A neutral color for 0 points */
+        }
+
+        @keyframes floatUp {
+            from {
+                transform: translateY(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1 class="game-title">Whack-A-Noise</h1>
+        
+        <!-- Rules Section -->
+        <div class="rules-section">
+            <div class="rules-column">
+                <h3 class="font-bold text-gray-400">✅ Hit These! (+10 pts)</h3>
+                <div class="icon-list">
+                    <span>📢</span><span>🔔</span><span>📣</span><span>💥</span><span>💣</span>
+                </div>
+            </div>
+            <div class="rules-column">
+                <h3 class="font-bold text-gray-400">❌ Avoid These! (-10 pts)</h3>
+                <div class="icon-list">
+                    <span>🤫</span><span>🔇</span><span>🎧</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="game-ui">
+            <span>Score: <span id="score">0</span></span>
+            <span>Time: <span id="time">30</span>s</span>
+        </div>
+        <div class="game-board" id="game-board">
+            <!-- Holes will be generated here by JavaScript -->
+        </div>
+        <button id="startButton" class="control-button">Start Game</button>
+
+        <!-- Message Box for game notifications -->
+        <div id="messageBox" class="message-box">
+            <h2 id="messageHeading"></h2>
+            <p id="messageText"></p>
+            <button id="messageButton">OK</button>
+        </div>
+    </div>
+
+    <script>
+        window.onload = function() {
+            // --- Game State Variables and DOM Elements ---
+            const scoreDisplay = document.getElementById('score');
+            const timeDisplay = document.getElementById('time');
+            const startButton = document.getElementById('startButton');
+            const gameBoard = document.getElementById('game-board');
+            const messageBox = document.getElementById('messageBox');
+            const messageHeading = document.getElementById('messageHeading');
+            const messageText = document.getElementById('messageText');
+            const messageButton = document.getElementById('messageButton');
+
+            // Loud icons to "whack" for points
+            const loudNoises = ['📢', '🔔', '📣', '💥', '💣'];
+            // Quiet icons that are a penalty to click
+            const quietNoises = ['🤫', '🔇'];
+            // The "helping" icon that is a penalty to click
+            const helpingSounds = ['🎧'];
+
+            let score = 0;
+            let time = 30;
+            let gameInterval;
+            let iconUp = null;
+            let isPlaying = false;
+            
+            // --- Game Functions ---
+
+            // Creates a floating score indicator
+            function createFloatingScore(value, element) {
+                const scoreElement = document.createElement('span');
+                if (value === 0) {
+                    scoreElement.innerText = "0";
+                } else {
+                    scoreElement.innerText = value > 0 ? `+${value}` : value;
+                }
+                
+                scoreElement.classList.add('floating-score');
+                scoreElement.classList.add(value > 0 ? 'plus' : value < 0 ? 'minus' : 'zero');
+                
+                // Position it near the clicked hole
+                const rect = element.getBoundingClientRect();
+                scoreElement.style.left = `${rect.left + rect.width / 2}px`;
+                scoreElement.style.top = `${rect.top}px`;
+                
+                document.body.appendChild(scoreElement);
+
+                setTimeout(() => {
+                    scoreElement.remove();
+                }, 1000); // Remove the element after the animation
+            }
+            
+            // Helper function to show a message box
+            function showMessage(heading, text, buttonText, onButtonClick) {
+                messageHeading.innerText = heading;
+                messageText.innerText = text;
+                messageButton.innerText = buttonText;
+                messageButton.onclick = () => {
+                    messageBox.style.display = 'none';
+                    if (onButtonClick) onButtonClick();
+                };
+                messageBox.style.display = 'block';
+            }
+            
+            // Generates the game board with 9 holes
+            function createBoard() {
+                gameBoard.innerHTML = '';
+                for (let i = 0; i < 9; i++) {
+                    const hole = document.createElement('div');
+                    hole.classList.add('hole');
+                    hole.dataset.index = i;
+                    
+                    const icon = document.createElement('span');
+                    icon.classList.add('icon');
+                    hole.appendChild(icon);
+                    
+                    hole.addEventListener('click', () => handleHit(i));
+                    gameBoard.appendChild(hole);
+                }
+            }
+            
+            // Randomly chooses a hole for an icon to pop up
+            function randomIcon() {
+                const holes = document.querySelectorAll('.hole');
+                const randomHole = holes[Math.floor(Math.random() * holes.length)];
+                
+                // If an icon is already up, hide it first
+                if (iconUp && iconUp.classList.contains('up')) {
+                    iconUp.classList.remove('up');
+                }
+                
+                // Randomly decide which type of icon to show
+                const randomChance = Math.random();
+                let randomIconEmoji;
+                let iconType;
+
+                if (randomChance < 0.7) { // 70% chance of a loud noise
+                    randomIconEmoji = loudNoises[Math.floor(Math.random() * loudNoises.length)];
+                    iconType = 'loud';
+                } else if (randomChance < 0.9) { // 20% chance of a quiet noise
+                    randomIconEmoji = quietNoises[Math.floor(Math.random() * quietNoises.length)];
+                    iconType = 'quiet';
+                } else { // 10% chance of a helping sound
+                    randomIconEmoji = helpingSounds[Math.floor(Math.random() * helpingSounds.length)];
+                    iconType = 'helping';
+                }
+                
+                randomHole.querySelector('.icon').innerText = randomIconEmoji;
+                randomHole.dataset.type = iconType;
+                
+                // Show the icon
+                randomHole.classList.add('up');
+                iconUp = randomHole;
+                
+                // Set a timeout to hide the icon after a random duration
+                const duration = 500 + Math.random() * 1000;
+                setTimeout(() => {
+                    if (iconUp === randomHole) {
+                        iconUp.classList.remove('up');
+                        iconUp = null;
+                    }
+                }, duration);
+            }
+            
+            // Handles a click event on a hole
+            function handleHit(index) {
+                if (!isPlaying) return;
+                
+                const holes = document.querySelectorAll('.hole');
+                const clickedHole = holes[index];
+                
+                // Check if the clicked hole has an icon up
+                if (clickedHole.classList.contains('up') && iconUp === clickedHole) {
+                    const iconType = clickedHole.dataset.type;
+                    
+                    if (iconType === 'loud') {
+                        score += 10;
+                        createFloatingScore(10, clickedHole);
+                        clickedHole.classList.add('hit');
+                        setTimeout(() => clickedHole.classList.remove('hit'), 200);
+                    } else if (iconType === 'quiet' || iconType === 'helping') {
+                        score -= 10;
+                        createFloatingScore(-10, clickedHole);
+                        clickedHole.classList.add('miss');
+                        setTimeout(() => clickedHole.classList.remove('miss'), 200);
+                    }
+                    clickedHole.classList.remove('up');
+                    iconUp = null; // Mark the icon as hit
+                } else {
+                    // This is the new logic: no penalty for missing a disappearing icon or clicking an empty hole
+                    createFloatingScore(0, clickedHole);
+                    clickedHole.classList.add('miss'); // Still show a visual miss, but no score change
+                    setTimeout(() => clickedHole.classList.remove('miss'), 200);
+                }
+                scoreDisplay.innerText = score;
+            }
+            
+            // Handles the game-over state
+            function gameOver() {
+                isPlaying = false;
+                clearInterval(gameInterval);
+                if (iconUp) {
+                    iconUp.classList.remove('up');
+                    iconUp = null;
+                }
+                showMessage(
+                    "Game Over!",
+                    `Your final score is: ${score}`,
+                    "Play Again",
+                    startGame
+                );
+            }
+
+            // Starts the game
+            function startGame() {
+                score = 0;
+                time = 30;
+                scoreDisplay.innerText = score;
+                timeDisplay.innerText = time;
+                isPlaying = true;
+                
+                // Update time every second
+                const timerInterval = setInterval(() => {
+                    time--;
+                    timeDisplay.innerText = time;
+                    if (time <= 0) {
+                        clearInterval(timerInterval);
+                        gameOver();
+                    }
+                }, 1000);
+                
+                // Start the main game loop for icon appearances
+                gameInterval = setInterval(randomIcon, 1000); // Icons appear every 1 second initially
+                
+                // Increase difficulty over time
+                const difficultyIncrease = setInterval(() => {
+                    if (gameInterval && isPlaying) {
+                        clearInterval(gameInterval);
+                        // Make the game faster, but with a less aggressive curve
+                        gameInterval = setInterval(randomIcon, Math.max(250, 1000 - (score * 2)));
+                    } else {
+                        clearInterval(difficultyIncrease);
+                    }
+                }, 5000);
+                
+                startButton.style.display = 'none';
+            }
+
+            // --- Initial Setup and Event Listeners ---
+            createBoard();
+            
+            startButton.addEventListener('click', () => {
+                startGame();
+            });
+
+            // Initial message
+            showMessage(
+                "Whack-A-Noise", 
+                "Click on the start button to begin!", 
+                "Start Game",
+                () => {
+                    startButton.style.display = 'block';
+                }
+            );
+        };
+    </script>
+</body>
+</html>

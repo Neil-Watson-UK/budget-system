@@ -1,0 +1,45 @@
+{
+    "referenceCode": "S3ITEA",
+    "subjectLine": "",
+    "preheaderText": "",
+    "backgroundImage": "",
+    "logoUrl": "https:\/\/eposaudioevents.com\/emailtemplates\/uploads\/img_683f0affc30f2.png",
+    "senderName": "",
+    "senderEmail": "",
+    "senderMobile": "",
+    "personalizationType": "none",
+    "region": "AMER",
+    "audience": "channel",
+    "emailFrom": "",
+    "sendTime": "",
+    "articleBlocks": [
+        {
+            "position": 1,
+            "type": "double"
+        }
+    ],
+    "articles": {
+        "1": {
+            "type": "double",
+            "leftImage": "https:\/\/eposaudioevents.com\/emailtemplates\/uploads\/img_6846f709594d2.png",
+            "leftHeader": "",
+            "leftHeaderAlignment": "center",
+            "leftHeaderFontWeight": "400",
+            "leftContent": "<p><span style=\"color: rgba(0, 0, 0, 0.7);\">Product Code: 1001262<\/span><\/p>",
+            "leftContentAlignment": "center",
+            "leftButtonText": "",
+            "leftButtonUrl": "",
+            "rightImage": "",
+            "rightHeader": "ADAPT E1",
+            "rightHeaderAlignment": "left",
+            "rightHeaderFontWeight": "400",
+            "rightContent": "<p><strong>Scandinavian Black<\/strong><\/p><p><br><\/p><p>An all-in-one earbud designed for the professional and personal you. With multi-point connectivity, Microsoft Teams and Made for iPhone certifications you will enjoy seamless communication plus unmatched comfort and exceptional sound all day.<\/p><p><br><\/p><p><strong>Battery life<\/strong><\/p><ul><li>Up to 50 hours with the charge case<\/li><\/ul><p><strong>Talk time<\/strong><\/p><ul><li>Up to 6 hours talk time<\/li><\/ul><p><strong>Listening time<\/strong><\/p><ul><li>Up to 14 hours listening time<\/li><\/ul>",
+            "rightContentAlignment": "left",
+            "rightButtonText": "",
+            "rightButtonUrl": "",
+            "leftColumnWidth": 50,
+            "rightColumnWidth": 50
+        }
+    },
+    "createdBy": "Neil"
+}

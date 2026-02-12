@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signal Runner</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tone.js for game sounds -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d1117; /* Dark background */
+            color: #e6e6e6; /* Light grey text */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 1rem;
+        }
+
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+            padding: 2rem;
+            border-radius: 1.5rem;
+            background-color: #161b22;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            max-width: 95vw;
+            width: 100%;
+            transition: all 0.3s ease-in-out;
+        }
+
+        @media (min-width: 768px) {
+            .game-container {
+                max-width: 700px;
+            }
+        }
+        
+        .game-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #63d471; /* Neon green */
+            text-shadow: 0 0 10px rgba(99, 212, 113, 0.5);
+        }
+
+        .game-ui {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #ffffff;
+            padding: 0 0.5rem;
+        }
+        
+        .game-canvas {
+            border-radius: 1rem;
+            box-shadow: 0 0 20px rgba(99, 212, 113, 0.3);
+            background-color: #0d1117;
+            width: 100%;
+            height: auto;
+            aspect-ratio: 1 / 1;
+        }
+
+        .game-controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            width: 100%;
+        }
+
+        .control-button {
+            padding: 0.75rem 2rem;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .start-button {
+            background-color: #63d471; /* Neon green */
+            color: #0d1117;
+        }
+
+        .start-button:hover {
+            background-color: #8be096;
+            transform: translateY(-2px);
+        }
+
+        .reset-button {
+            background-color: #ff6b6b; /* Red */
+            color: #0d1117;
+        }
+
+        .reset-button:hover {
+            background-color: #ff8e8e;
+            transform: translateY(-2px);
+        }
+
+        /* Message Box Styling */
+        .message-box {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(22, 27, 34, 0.95);
+            border: 2px solid #63d471;
+            border-radius: 1rem;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            display: none;
+        }
+        .message-box h2 {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #63d471;
+            margin-bottom: 1rem;
+        }
+        .message-box p {
+            font-size: 1.1rem;
+            color: #ffffff;
+        }
+        .message-box button {
+            background-color: #ff6b6b;
+            color: #0d1117;
+            margin-top: 1.5rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1 class="game-title">Signal Runner</h1>
+        <div class="game-ui">
+            <span id="score-display">Score: 0</span>
+            <span id="lives-display">Lives: 3</span>
+        </div>
+        <canvas id="gameCanvas" class="game-canvas"></canvas>
+        <div class="game-controls">
+            <button id="startButton" class="control-button start-button">Start Game</button>
+            <button id="resetButton" class="control-button reset-button">Reset</button>
+        </div>
+        
+        <!-- Message Box for game notifications -->
+        <div id="messageBox" class="message-box">
+            <h2 id="messageHeading"></h2>
+            <p id="messageText"></p>
+            <button id="messageButton">OK</button>
+        </div>
+    </div>
+
+    <script>
+        window.onload = function() {
+            // --- Game Constants and Initialization ---
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+            const scoreDisplay = document.getElementById('score-display');
+            const livesDisplay = document.getElementById('lives-display');
+            const startButton = document.getElementById('startButton');
+            const resetButton = document.getElementById('resetButton');
+            const messageBox = document.getElementById('messageBox');
+            const messageHeading = document.getElementById('messageHeading');
+            const messageText = document.getElementById('messageText');
+            const messageButton = document.getElementById('messageButton');
+
+            let TILE_SIZE = 25;
+            const WALL = 1;
+            const PELLET = 2;
+            const POWER_UP = 3;
+            const DIRECTIONS = ['up', 'down', 'left', 'right'];
+
+            // --- Game State Variables ---
+            let gameStarted = false;
+            let isRunning = false;
+            let score = 0;
+            let lives = 3;
+            let powerUpActive = false;
+            let powerUpTimer = 0;
+            let powerUpDuration = 600; // 10 seconds at 60 FPS
+            let directionQueue = null;
+            let maze = [];
+            let ghostReleaseTimer = 0;
+            let ghostsToRelease = [];
+            
+            let pelletSynth, powerUpSynth, collisionSynth, winSynth;
+
+            // --- Game Sounds using Tone.js ---
+            function setupAudio() {
+                // AudioContext must be started by user interaction
+                pelletSynth = new Tone.Synth({
+                    oscillator: { type: 'sine' },
+                    envelope: { attack: 0.01, decay: 0.05, sustain: 0, release: 0.1 }
+                }).toDestination();
+                powerUpSynth = new Tone.PolySynth(Tone.Synth, {
+                    oscillator: { type: 'triangle' }
+                }).toDestination();
+                collisionSynth = new Tone.PolySynth(Tone.Synth, {
+                    oscillator: { type: 'square' }
+                }).toDestination();
+                winSynth = new Tone.PolySynth(Tone.Synth, {
+                    oscillator: { type: 'sine' }
+                }).toDestination();
+            }
+
+            function playPelletSound() {
+                if (pelletSynth) pelletSynth.triggerAttackRelease("C5", "32n");
+            }
+            function playPowerUpSound() {
+                if (powerUpSynth) powerUpSynth.triggerAttackRelease(["C4", "E4", "G4", "C5"], "4n");
+            }
+            function playCollisionSound() {
+                if (collisionSynth) collisionSynth.triggerAttackRelease(["C2", "B1"], "8n");
+            }
+            function playWinSound() {
+                if (winSynth) winSynth.triggerAttackRelease(["C5", "E5", "G5"], "1n");
+            }
+
+            // --- Maze and Tile-based Logic ---
+            function createMaze() {
+                // The maze grid, with 1 = wall, 2 = pellet, 3 = power-up
+                return [
+                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                    [1,2,2,2,2,2,2,2,2,2,2,2,2,1,1,2,2,2,2,2,2,2,2,2,2,2,2,1],
+                    [1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1],
+                    [1,3,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,1,1,2,1,1,1,1,3,1],
+                    [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
+                    [1,2,1,1,1,1,2,1,1,2,1,1,1,1,1,1,1,1,2,1,1,2,1,1,1,1,2,1],
+                    [1,2,2,2,2,2,2,1,1,2,2,2,2,1,1,2,2,2,2,1,1,2,2,2,2,2,2,1],
+                    [1,1,1,1,1,1,2,1,1,1,1,1,0,0,0,0,1,1,1,1,1,2,1,1,1,1,1,1],
+                    [0,0,0,0,0,1,2,1,1,0,0,0,0,0,0,0,0,0,0,1,1,2,1,0,0,0,0,0],
+                    [0,0,0,0,0,1,2,1,1,0,1,1,1,1,1,1,1,1,0,1,1,2,1,0,0,0,0,0],
+                    [1,1,1,1,1,1,2,1,1,0,1,0,0,0,0,0,0,1,0,1,1,2,1,1,1,1,1,1],
+                    [2,2,2,2,2,2,2,2,2,0,1,0,1,1,1,1,0,1,0,2,2,2,2,2,2,2,2,2],
+                    [1,1,1,1,1,1,2,1,1,0,1,0,1,0,0,1,0,1,0,1,1,2,1,1,1,1,1,1],
+                    [1,0,0,0,0,0,2,0,0,0,0,0,1,0,0,1,0,0,0,0,0,2,0,0,0,0,0,1],
+                    [1,1,1,1,1,1,2,1,1,0,1,0,1,1,1,1,0,1,0,1,1,2,1,1,1,1,1,1],
+                    [2,2,2,2,2,2,2,2,2,0,1,0,0,0,0,0,0,1,0,2,2,2,2,2,2,2,2,2],
+                    [1,1,1,1,1,1,2,1,1,0,1,1,1,1,1,1,1,1,0,1,1,2,1,1,1,1,1,1],
+                    [0,0,0,0,0,1,2,1,1,0,0,0,0,0,0,0,0,0,0,1,1,2,1,0,0,0,0,0],
+                    [0,0,0,0,0,1,2,1,1,0,1,1,1,1,1,1,1,1,0,1,1,2,1,0,0,0,0,0],
+                    [1,1,1,1,1,1,2,1,1,0,1,0,0,0,0,0,0,1,0,1,1,2,1,1,1,1,1,1],
+                    [1,2,2,2,2,2,2,2,2,2,2,2,2,1,1,2,2,2,2,2,2,2,2,2,2,2,2,1],
+                    [1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1],
+                    [1,3,2,2,1,1,2,2,2,2,2,2,2,0,0,2,2,2,2,2,2,2,1,1,2,2,3,1],
+                    [1,1,1,2,1,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,2,1,1,1],
+                    [1,2,2,2,2,2,2,1,1,2,2,2,2,1,1,2,2,2,2,1,1,2,2,2,2,2,2,1],
+                    [1,2,1,1,1,1,1,1,1,2,1,1,2,1,1,2,1,1,2,1,1,1,1,1,1,1,2,1],
+                    [1,2,2,2,2,2,2,2,2,2,1,1,2,2,2,2,1,1,2,2,2,2,2,2,2,2,2,1],
+                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                ];
+            }
+
+            // --- Entity (Player & Noise) Base Class ---
+            class Entity {
+                constructor(x, y, radius) {
+                    this.initialTileX = x;
+                    this.initialTileY = y;
+                    this.tileX = x;
+                    this.tileY = y;
+                    this.x = x * TILE_SIZE + TILE_SIZE / 2; // Start at tile center
+                    this.y = y * TILE_SIZE + TILE_SIZE / 2;
+                    this.radius = radius;
+                    this.direction = null; // No initial direction
+                    this.speed = 2;
+                }
+
+                init() {
+                    this.tileX = this.initialTileX;
+                    this.tileY = this.initialTileY;
+                    this.x = this.initialTileX * TILE_SIZE + TILE_SIZE / 2; // Reset to tile center
+                    this.y = this.initialTileY * TILE_SIZE + TILE_SIZE / 2;
+                    this.direction = null;
+                }
+                
+                // IMPORTANT CHANGE: The collision check now allows movement into the tunnel
+                checkWallCollision(nextTileX, nextTileY) {
+                    // Check if a tile is a wall. It no longer checks for boundary walls.
+                    if (nextTileX < 0 || nextTileX >= maze[0].length) {
+                        return false; // Allow movement into the tunnel
+                    }
+                    if (nextTileY < 0 || nextTileY >= maze.length) {
+                        return true; // Still check for vertical boundaries
+                    }
+                    return maze[nextTileY][nextTileX] === WALL;
+                }
+            }
+
+            // --- Player Object (The Signal) ---
+            class Player extends Entity {
+                constructor(x, y, radius) {
+                    super(x, y, radius);
+                    this.nextDirection = null;
+                }
+
+                draw() {
+                    ctx.fillStyle = '#fefd54'; // Bright yellow
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.closePath();
+                }
+
+                update() {
+                    // Handle input queue
+                    if (this.nextDirection) {
+                        const nextTileX = Math.round((this.x - TILE_SIZE / 2) / TILE_SIZE);
+                        const nextTileY = Math.round((this.y - TILE_SIZE / 2) / TILE_SIZE);
+                        
+                        let proposedX = nextTileX;
+                        let proposedY = nextTileY;
+
+                        if (this.nextDirection === 'up') proposedY--;
+                        else if (this.nextDirection === 'down') proposedY++;
+                        else if (this.nextDirection === 'left') proposedX--;
+                        else if (this.nextDirection === 'right') proposedX++;
+                        
+                        if (!this.checkWallCollision(proposedX, proposedY)) {
+                            this.direction = this.nextDirection;
+                            this.nextDirection = null;
+                        }
+                    }
+
+                    // Move based on the current direction
+                    if (this.direction) {
+                        let nextX = this.x;
+                        let nextY = this.y;
+                        if (this.direction === 'up') nextY -= this.speed;
+                        else if (this.direction === 'down') nextY += this.speed;
+                        else if (this.direction === 'left') nextX -= this.speed;
+                        else if (this.direction === 'right') nextX += this.speed;
+                        
+                        const nextTileX = Math.round((nextX - TILE_SIZE / 2) / TILE_SIZE);
+                        const nextTileY = Math.round((nextY - TILE_SIZE / 2) / TILE_SIZE);
+                        
+                        if (!this.checkWallCollision(nextTileX, nextTileY)) {
+                            this.x = nextX;
+                            this.y = nextY;
+                        } else {
+                            // Collision, so stop moving
+                            this.direction = null;
+                        }
+                    }
+
+                    // NEW: Tunnel teleportation logic now happens after movement calculation
+                    if (this.x < 0) {
+                        this.x = canvas.width;
+                    } else if (this.x > canvas.width) {
+                        this.x = 0;
+                    }
+                    
+                    this.checkPelletCollision();
+                }
+
+                checkPelletCollision() {
+                    const tileX = Math.round((this.x - TILE_SIZE / 2) / TILE_SIZE);
+                    const tileY = Math.round((this.y - TILE_SIZE / 2) / TILE_SIZE);
+                    
+                    if (tileX < 0 || tileX >= maze[0].length || tileY < 0 || tileY >= maze.length) {
+                        return; // Ignore collision check in tunnels
+                    }
+
+                    if (maze[tileY][tileX] === PELLET) {
+                        maze[tileY][tileX] = 0;
+                        score += 10;
+                        playPelletSound();
+                        updateUI();
+                        checkWin();
+                    } else if (maze[tileY][tileX] === POWER_UP) {
+                        maze[tileY][tileX] = 0;
+                        score += 50;
+                        powerUpActive = true;
+                        powerUpTimer = powerUpDuration;
+                        playPowerUpSound();
+                        updateUI();
+                        checkWin();
+                    }
+                }
+            }
+            
+            // --- Enemies (Noise/Static) Objects ---
+            class Noise extends Entity {
+                constructor(x, y, releaseDelay) {
+                    super(x, y, TILE_SIZE / 2.5);
+                    this.isFleeing = false;
+                    this.isLeavingHome = true;
+                    this.speed = 1.5;
+                    this.releaseDelay = releaseDelay;
+                    // New: A predefined path to leave the ghost house
+                    this.path = [{x: 13, y: 13}, {x: 13, y: 12}, {x: 13, y: 11}, {x: 13, y: 10}];
+                    this.pathIndex = 0;
+                    
+                    // The other ghosts start in different positions, so their path is a bit different
+                    if (x === 14) this.path[0] = {x: 14, y: 13};
+                }
+                
+                init() {
+                    super.init();
+                    this.isLeavingHome = true;
+                    this.pathIndex = 0;
+                    this.x = this.initialTileX * TILE_SIZE + TILE_SIZE / 2;
+                    this.y = this.initialTileY * TILE_SIZE + TILE_SIZE / 2;
+                }
+
+                draw() {
+                    if (this.isFleeing) {
+                        ctx.fillStyle = '#1c7ed6'; // Blue for vulnerable state
+                        ctx.strokeStyle = '#a5d8ff';
+                    } else {
+                        ctx.fillStyle = '#ff6b6b'; // Red for static/danger
+                        ctx.strokeStyle = '#ffb3b3';
+                    }
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(this.x, this.y - this.radius);
+                    ctx.lineTo(this.x + this.radius, this.y);
+                    ctx.lineTo(this.x, this.y + this.radius);
+                    ctx.lineTo(this.x - this.radius, this.y);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+                }
+
+                update() {
+                    if (this.isLeavingHome) {
+                        if (ghostReleaseTimer >= this.releaseDelay) {
+                             this.moveAlongPath();
+                        }
+                    } else {
+                        const currentTileX = Math.round((this.x - TILE_SIZE / 2) / TILE_SIZE);
+                        const currentTileY = Math.round((this.y - TILE_SIZE / 2) / TILE_SIZE);
+
+                        const isCentered = Math.abs((this.x - TILE_SIZE / 2) % TILE_SIZE) < this.speed &&
+                                           Math.abs((this.y - TILE_SIZE / 2) % TILE_SIZE) < this.speed;
+
+                        if (isCentered) {
+                            this.chooseNewDirection();
+                        }
+                        
+                        let nextX = this.x;
+                        let nextY = this.y;
+                        const effectiveSpeed = this.isFleeing ? this.speed * 0.8 : this.speed;
+                        
+                        if (this.direction === 'up') nextY -= effectiveSpeed;
+                        else if (this.direction === 'down') nextY += effectiveSpeed;
+                        else if (this.direction === 'left') nextX -= effectiveSpeed;
+                        else if (this.direction === 'right') nextX += effectiveSpeed;
+                        
+                        const nextTileX = Math.round((nextX - TILE_SIZE / 2) / TILE_SIZE);
+                        const nextTileY = Math.round((nextY - TILE_SIZE / 2) / TILE_SIZE);
+
+                        if (!this.checkWallCollision(nextTileX, nextTileY)) {
+                            this.x = nextX;
+                            this.y = nextY;
+                        } else {
+                             this.chooseNewDirection();
+                        }
+                    }
+
+                    // NEW: Tunnel teleportation for ghosts
+                    if (this.x < 0) {
+                        this.x = canvas.width;
+                    } else if (this.x > canvas.width) {
+                        this.x = 0;
+                    }
+                }
+                
+                moveAlongPath() {
+                    if (this.pathIndex >= this.path.length) {
+                        this.isLeavingHome = false; // We have left the home
+                        return;
+                    }
+                    
+                    const targetTile = this.path[this.pathIndex];
+                    const targetX = targetTile.x * TILE_SIZE + TILE_SIZE / 2;
+                    const targetY = targetTile.y * TILE_SIZE + TILE_SIZE / 2;
+
+                    // Move towards the target point
+                    if (Math.abs(this.x - targetX) > 1) {
+                        this.x += this.x < targetX ? this.speed : -this.speed;
+                    } else if (Math.abs(this.y - targetY) > 1) {
+                        this.y += this.y < targetY ? this.speed : -this.speed;
+                    } else {
+                        // Reached the current target, move to the next one
+                        this.x = targetX;
+                        this.y = targetY;
+                        this.pathIndex++;
+                    }
+                }
+                
+                chooseNewDirection() {
+                    const validDirections = [];
+                    const oppositeDir = this.getOppositeDirection(this.direction);
+                    
+                    for (const dir of DIRECTIONS) {
+                        let nextX = Math.round((this.x - TILE_SIZE / 2) / TILE_SIZE);
+                        let nextY = Math.round((this.y - TILE_SIZE / 2) / TILE_SIZE);
+                        
+                        if (dir === 'up') nextY--;
+                        if (dir === 'down') nextY++;
+                        if (dir === 'left') nextX--;
+                        if (dir === 'right') nextX++;
+
+                        if (!this.checkWallCollision(nextX, nextY) && dir !== oppositeDir) {
+                            validDirections.push(dir);
+                        }
+                    }
+
+                    if (validDirections.length > 0) {
+                        this.direction = validDirections[Math.floor(Math.random() * validDirections.length)];
+                    } else {
+                        // Dead end, must reverse
+                        this.direction = oppositeDir;
+                    }
+                }
+                
+                getOppositeDirection(dir) {
+                    if (dir === 'up') return 'down';
+                    if (dir === 'down') return 'up';
+                    if (dir === 'left') return 'right';
+                    if (dir === 'right') return 'left';
+                    return null;
+                }
+            }
+
+            const player = new Player(1, 1, TILE_SIZE / 2.5);
+            const enemies = [
+                new Noise(13, 13, 0),
+                new Noise(14, 13, 120),
+                new Noise(13, 14, 240),
+                new Noise(14, 14, 360)
+            ];
+
+            // --- Core Game Functions ---
+            function showMessage(heading, text, buttonText, onButtonClick) {
+                messageHeading.innerText = heading;
+                messageText.innerText = text;
+                messageButton.innerText = buttonText;
+                messageButton.onclick = () => {
+                    messageBox.style.display = 'none';
+                    if (onButtonClick) {
+                        onButtonClick();
+                    }
+                };
+                messageBox.style.display = 'block';
+            }
+
+            function resetGame() {
+                score = 0;
+                lives = 3;
+                powerUpActive = false;
+                powerUpTimer = 0;
+                isRunning = false;
+                maze = createMaze();
+                player.init();
+                enemies.forEach(e => e.init());
+                ghostReleaseTimer = 0;
+                updateUI();
+                showMessage("Game Reset", "Press Start to play again.", "OK", () => {
+                    startButton.disabled = false;
+                });
+            }
+            
+            function gameOver() {
+                isRunning = false;
+                playCollisionSound();
+                showMessage("SYSTEM OVERLOAD", `The static overwhelmed you! Final Score: ${score}`, "Try Again?", resetGame);
+            }
+
+            function winGame() {
+                isRunning = false;
+                playWinSound();
+                showMessage("SIGNAL RESTORED!", `You cleared all the noise! Final Score: ${score}`, "Play Again?", resetGame);
+            }
+
+            function updateUI() {
+                scoreDisplay.innerText = `Score: ${score}`;
+                livesDisplay.innerText = `Lives: ${lives}`;
+            }
+            
+            function checkWin() {
+                const remainingPellets = maze.flat().filter(tile => tile === PELLET || tile === POWER_UP).length;
+                if (remainingPellets === 0) {
+                    winGame();
+                }
+            }
+
+            function checkCollisions() {
+                for (let i = enemies.length - 1; i >= 0; i--) {
+                    const enemy = enemies[i];
+                    if (enemy.isLeavingHome) continue;
+
+                    const dx = player.x - enemy.x;
+                    const dy = player.y - enemy.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < TILE_SIZE * 0.8) { // A bit of a buffer
+                        if (powerUpActive) {
+                            // Splice the enemy from the array
+                            enemies.splice(i, 1);
+                            score += 200;
+                            updateUI();
+                        } else {
+                            lives--;
+                            updateUI();
+                            if (lives <= 0) {
+                                gameOver();
+                            } else {
+                                player.init();
+                                powerUpActive = false;
+                                // Teleport all remaining enemies back to their start positions
+                                enemies.forEach(e => e.init());
+                            }
+                        }
+                    }
+                }
+            }
+            
+            function updateGhosts() {
+                ghostReleaseTimer++;
+                enemies.forEach(ghost => {
+                    ghost.update();
+                });
+            }
+
+            function updateGame() {
+                if (!isRunning) return;
+
+                player.update();
+                updateGhosts();
+                checkCollisions();
+                
+                if (powerUpActive) {
+                    powerUpTimer--;
+                    if (powerUpTimer <= 0) {
+                        powerUpActive = false;
+                    }
+                    enemies.forEach(e => e.isFleeing = true);
+                } else {
+                    enemies.forEach(e => e.isFleeing = false);
+                }
+            }
+
+            function drawGame() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                for (let y = 0; y < maze.length; y++) {
+                    for (let x = 0; x < maze[y].length; x++) {
+                        const tileType = maze[y][x];
+                        if (tileType === WALL) {
+                            ctx.fillStyle = '#63d471';
+                            ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                        } else if (tileType === PELLET) {
+                            ctx.fillStyle = '#ffffff';
+                            ctx.beginPath();
+                            ctx.arc(x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2, TILE_SIZE / 8, 0, Math.PI * 2);
+                            ctx.fill();
+                            ctx.closePath();
+                        } else if (tileType === POWER_UP) {
+                            ctx.fillStyle = '#63d471';
+                            ctx.beginPath();
+                            ctx.arc(x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2, TILE_SIZE / 4, 0, Math.PI * 2);
+                            ctx.fill();
+                            ctx.closePath();
+                        }
+                    }
+                }
+
+                player.draw();
+                enemies.forEach(e => e.draw());
+            }
+
+            function gameLoop() {
+                updateGame();
+                drawGame();
+                if (isRunning) {
+                    requestAnimationFrame(gameLoop);
+                }
+            }
+
+            // --- Event Listeners and Game Flow ---
+            function handleResize() {
+                const gameContainer = document.querySelector('.game-container');
+                const availableWidth = gameContainer.offsetWidth - 64; // Adjust for padding
+                const availableHeight = window.innerHeight - gameContainer.offsetTop - 200; // Adjust for UI
+                const newSize = Math.min(availableWidth, availableHeight);
+                canvas.width = newSize;
+                canvas.height = newSize;
+                TILE_SIZE = Math.floor(canvas.width / maze[0].length);
+                player.x = player.initialTileX * TILE_SIZE + TILE_SIZE/2;
+                player.y = player.initialTileY * TILE_SIZE + TILE_SIZE/2;
+                enemies.forEach(e => {
+                    e.x = e.initialTileX * TILE_SIZE + TILE_SIZE/2;
+                    e.y = e.initialTileY * TILE_SIZE + TILE_SIZE/2;
+                });
+            }
+
+            window.addEventListener('keydown', (e) => {
+                if (!isRunning) return;
+                switch (e.key) {
+                    case 'ArrowUp':
+                    case 'w':
+                        directionQueue = 'up';
+                        break;
+                    case 'ArrowDown':
+                    case 's':
+                        directionQueue = 'down';
+                        break;
+                    case 'ArrowLeft':
+                    case 'a':
+                        directionQueue = 'left';
+                        break;
+                    case 'ArrowRight':
+                    case 'd':
+                        directionQueue = 'right';
+                        break;
+                }
+                player.nextDirection = directionQueue;
+            });
+            
+            startButton.addEventListener('click', async () => {
+                if (!gameStarted) {
+                    gameStarted = true;
+                    // Start the AudioContext with a user gesture
+                    await Tone.start();
+                    setupAudio();
+                    isRunning = true;
+                    startButton.disabled = true;
+                    updateUI();
+                    gameLoop();
+                }
+            });
+            
+            resetButton.addEventListener('click', () => {
+                if (isRunning) {
+                    resetGame();
+                } else if (gameStarted) {
+                    resetGame();
+                }
+            });
+            
+            // Initial setup
+            maze = createMaze();
+            player.initialTileX = 1;
+            player.initialTileY = 1;
+            player.init();
+            enemies.forEach(e => e.init());
+            handleResize();
+            window.addEventListener('resize', handleResize);
+            
+            showMessage("Signal Runner", "Use arrow keys or WASD to navigate. Collect all the signal bits while avoiding the static noise!", "Start Game", () => {
+                startButton.disabled = false;
+            });
+            updateUI();
+        };
+    </script>
+</body>
+</html>

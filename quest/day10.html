@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Game</title>
+    <style>
+        body {
+            background-color: #0d1117;
+            color: #ffffff;
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            text-align: center;
+        }
+        canvas {
+            background-color: #000000;
+            border: 2px solid #58a6ff;
+            box-shadow: 0 0 20px #58a6ff;
+            max-width: 95vw;
+            max-height: 80vh;
+        }
+        .ui-container {
+            position: absolute;
+            top: 10px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            padding: 0 20px;
+            box-sizing: border-box;
+        }
+        .score {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #c9d1d9;
+        }
+        .message-box {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(26, 32, 44, 0.95);
+            border: 2px solid #58a6ff;
+            border-radius: 1rem;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            display: none;
+        }
+        .message-box h2 {
+            font-size: 2rem;
+            color: #58a6ff;
+            margin-bottom: 1rem;
+        }
+        .message-box p {
+            font-size: 1rem;
+            color: #ffffff;
+            line-height: 1.5;
+        }
+        .message-box button {
+            background-color: #58a6ff;
+            color: #1a202c;
+            margin-top: 1.5rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            border: none;
+        }
+        .message-box button:hover {
+            background-color: #79c0ff;
+        }
+    </style>
+</head>
+<body>
+    <div class="ui-container">
+        <div class="score">Score: <span id="score">0</span></div>
+    </div>
+    <canvas id="gameCanvas"></canvas>
+    
+    <div id="messageBox" class="message-box">
+        <h2 id="messageHeading"></h2>
+        <p id="messageText"></p>
+        <button id="messageButton">OK</button>
+    </div>
+
+    <script>
+        window.onload = function() {
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+            const scoreDisplay = document.getElementById('score');
+            const messageBox = document.getElementById('messageBox');
+            const messageHeading = document.getElementById('messageHeading');
+            const messageText = document.getElementById('messageText');
+            const messageButton = document.getElementById('messageButton');
+
+            // Game variables
+            let isPlaying = false;
+            let score = 0;
+            const gridSize = 20; // Fixed grid size for reliable collision
+            let snake;
+            let food;
+            let dx = gridSize;
+            let dy = 0;
+            let changingDirection = false;
+            
+            // Speed variables
+            const initialSpeed = 200;
+            const speedIncrement = 10;
+            const minSpeed = 50;
+            let gameSpeed = initialSpeed;
+
+            // --- Initialization and Setup ---
+            function init() {
+                resizeCanvas();
+                setupEventListeners();
+                showMessage("Snake", "Use the arrow keys (or WASD) to control the snake. Eat the red food to grow and increase your score. Don't run into the walls or yourself!", "Start Game", startGame);
+            }
+
+            function resizeCanvas() {
+                // Ensure canvas size is a multiple of the grid size and about half the screen size
+                const width = Math.floor(window.innerWidth * 0.5 / gridSize) * gridSize;
+                const height = Math.floor(window.innerHeight * 0.5 / gridSize) * gridSize;
+                canvas.width = width;
+                canvas.height = height;
+            }
+
+            function setupEventListeners() {
+                window.addEventListener('resize', resizeCanvas);
+                document.addEventListener('keydown', changeDirection);
+            }
+
+            function resetGame() {
+                score = 0;
+                dx = gridSize;
+                dy = 0;
+                gameSpeed = initialSpeed;
+                changingDirection = false;
+                scoreDisplay.innerText = score;
+                // Start snake in the center, on a valid grid point
+                const startX = Math.floor(canvas.width / 2 / gridSize) * gridSize;
+                const startY = Math.floor(canvas.height / 2 / gridSize) * gridSize;
+                snake = [
+                    {x: startX, y: startY},
+                    {x: startX - gridSize, y: startY},
+                    {x: startX - gridSize * 2, y: startY}
+                ];
+                generateFood();
+            }
+
+            function generateFood() {
+                // Generate food on a valid grid point
+                food = {
+                    x: Math.floor(Math.random() * (canvas.width / gridSize)) * gridSize,
+                    y: Math.floor(Math.random() * (canvas.height / gridSize)) * gridSize,
+                    size: gridSize
+                };
+            }
+
+            // --- Game Loop and Drawing ---
+            function gameLoop() {
+                if (!isPlaying) return;
+                
+                setTimeout(() => {
+                    changingDirection = false;
+                    clearCanvas();
+                    drawFood();
+                    updateSnakePosition();
+                    drawSnake();
+                    
+                    if (checkCollision()) {
+                        gameOver();
+                    } else {
+                        gameLoop();
+                    }
+                }, gameSpeed);
+            }
+
+            function clearCanvas() {
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+
+            function drawSnake() {
+                snake.forEach(part => {
+                    ctx.fillStyle = '#7CFC00';
+                    ctx.fillRect(part.x, part.y, gridSize, gridSize);
+                    ctx.strokeStyle = '#006400';
+                    ctx.strokeRect(part.x, part.y, gridSize, gridSize);
+                });
+            }
+
+            function drawFood() {
+                ctx.fillStyle = '#ff0000';
+                ctx.fillRect(food.x, food.y, food.size, food.size);
+            }
+
+            function updateSnakePosition() {
+                const head = {x: snake[0].x + dx, y: snake[0].y + dy};
+                snake.unshift(head);
+                
+                const didEatFood = snake[0].x === food.x && snake[0].y === food.y;
+                if (didEatFood) {
+                    score += 10;
+                    scoreDisplay.innerText = score;
+                    // Increase speed every 2 food items, down to a minimum speed
+                    if (score % 20 === 0 && gameSpeed > minSpeed) {
+                        gameSpeed -= speedIncrement;
+                    }
+                    generateFood();
+                } else {
+                    snake.pop();
+                }
+            }
+
+            function changeDirection(event) {
+                // The previous version had an issue with event.key.toLowerCase()
+                // which broke the arrow keys. This version fixes that by
+                // checking the raw event.key value and including both
+                // capitalized and lowercase letters for WASD.
+                const LEFT_KEYS = ['ArrowLeft', 'a', 'A'];
+                const RIGHT_KEYS = ['ArrowRight', 'd', 'D'];
+                const UP_KEYS = ['ArrowUp', 'w', 'W'];
+                const DOWN_KEYS = ['ArrowDown', 's', 'S'];
+                
+                if (changingDirection) return;
+                changingDirection = true;
+                
+                const keyPressed = event.key;
+                const goingUp = dy === -gridSize;
+                const goingDown = dy === gridSize;
+                const goingRight = dx === gridSize;
+                const goingLeft = dx === -gridSize;
+                
+                if (LEFT_KEYS.includes(keyPressed) && !goingRight) {
+                    dx = -gridSize;
+                    dy = 0;
+                }
+                if (UP_KEYS.includes(keyPressed) && !goingDown) {
+                    dx = 0;
+                    dy = -gridSize;
+                }
+                if (RIGHT_KEYS.includes(keyPressed) && !goingLeft) {
+                    dx = gridSize;
+                    dy = 0;
+                }
+                if (DOWN_KEYS.includes(keyPressed) && !goingUp) {
+                    dx = 0;
+                    dy = gridSize;
+                }
+            }
+
+            function checkCollision() {
+                // Check if head collides with body
+                for (let i = 4; i < snake.length; i++) {
+                    if (snake[i].x === snake[0].x && snake[i].y === snake[0].y) return true;
+                }
+                
+                // Check if head collides with walls
+                const hitLeftWall = snake[0].x < 0;
+                const hitRightWall = snake[0].x >= canvas.width;
+                const hitTopWall = snake[0].y < 0;
+                const hitBottomWall = snake[0].y >= canvas.height;
+                
+                return hitLeftWall || hitRightWall || hitTopWall || hitBottomWall;
+            }
+
+            // --- Game State Functions ---
+            function startGame() {
+                messageBox.style.display = 'none';
+                resetGame();
+                isPlaying = true;
+                gameLoop();
+            }
+
+            function gameOver() {
+                isPlaying = false;
+                showMessage("Game Over", `Your final score is: ${score}.`, "Play Again", startGame);
+            }
+
+            function showMessage(heading, text, buttonText, onButtonClick) {
+                messageHeading.innerText = heading;
+                messageText.innerText = text;
+                messageButton.innerText = buttonText;
+                messageButton.onclick = () => {
+                    messageBox.style.display = 'none';
+                    if (onButtonClick) onButtonClick();
+                };
+                messageBox.style.display = 'block';
+            }
+
+            // Start the game with an initial message
+            init();
+        };
+    </script>
+</body>
+</html>

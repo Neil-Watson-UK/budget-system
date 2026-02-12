@@ -1,0 +1,62 @@
+{
+    "referenceCode": "DKV0W2",
+    "personalizationType": "none",
+    "region": "AMER",
+    "audience": "channel",
+    "emailFrom": "",
+    "sendTime": "",
+    "subjectLine": "",
+    "preheaderText": "",
+    "backgroundImage": "",
+    "logoUrl": "https:\/\/eposaudioevents.com\/emailtemplates\/uploads\/img_683f0affc30f2.png",
+    "senderName": "",
+    "senderEmail": "",
+    "senderMobile": "",
+    "articleBlocks": [
+        {
+            "position": 0,
+            "type": "single",
+            "mainImage": "",
+            "header": "",
+            "headerAlignment": "left",
+            "headerFontWeight": "400",
+            "content": "",
+            "contentAlignment": "left",
+            "buttonText": "",
+            "buttonUrl": "",
+            "backgroundColor": "#ffffff",
+            "leftImage": "",
+            "leftHeader": "",
+            "leftHeaderAlignment": "left",
+            "leftHeaderFontWeight": "400",
+            "leftContent": "",
+            "leftContentAlignment": "left",
+            "leftButtonText": "",
+            "leftButtonUrl": "",
+            "rightImage": "",
+            "rightHeader": "",
+            "rightHeaderAlignment": "left",
+            "rightHeaderFontWeight": "400",
+            "rightContent": "",
+            "rightContentAlignment": "left",
+            "rightButtonText": "",
+            "rightButtonUrl": ""
+        }
+    ],
+    "articles": [
+        {
+            "type": "single",
+            "mainImage": "",
+            "header": "",
+            "headerAlignment": "left",
+            "headerFontWeight": "400",
+            "content": "<p><br><\/p>",
+            "contentAlignment": "left",
+            "buttonText": "",
+            "buttonUrl": "",
+            "backgroundColor": "#ffffff"
+        }
+    ],
+    "createdBy": "neil_watson",
+    "userId": "4"
+}

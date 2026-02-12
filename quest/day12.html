@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Melody Maker</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tone.js for music and sound effects -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d1117;
+            color: #e2e8f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 1rem;
+        }
+
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+            padding: 2.5rem;
+            border-radius: 1.5rem;
+            background-color: #161b22;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+        }
+
+        .note-pad {
+            width: 150px;
+            height: 150px;
+            border-radius: 24px;
+            cursor: pointer;
+            transition: transform 0.1s ease-in-out, box-shadow 0.2s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+
+        .note-pad:hover {
+            transform: scale(1.05);
+        }
+
+        .note-pad:active {
+            transform: scale(0.95);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .note-pad.glow {
+            animation: glow 0.5s forwards;
+        }
+        
+        @keyframes glow {
+            0% { box-shadow: 0 0 10px var(--color); }
+            50% { box-shadow: 0 0 20px var(--color), 0 0 40px var(--color); }
+            100% { box-shadow: 0 0 10px var(--color); }
+        }
+
+        .message-box {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #2d3748;
+            padding: 2.5rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            z-index: 100;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200">
+    <div class="game-container">
+        <h1 class="text-4xl md:text-5xl font-bold text-blue-400 mb-2">Melody Maker</h1>
+        <p class="text-md md:text-lg text-gray-400 mb-6">
+            Watch the sequence, then repeat it to score!
+        </p>
+
+        <div class="flex items-center justify-center gap-6 text-2xl font-semibold mb-6">
+            <div>Level: <span id="level-display" class="text-green-400">1</span></div>
+            <div>Score: <span id="score-display" class="text-yellow-400">0</span></div>
+        </div>
+        
+        <div id="game-board" class="grid grid-cols-2 gap-4">
+            <!-- Note pads will be dynamically generated here -->
+        </div>
+
+        <button id="start-button" class="mt-8 px-8 py-4 bg-green-500 hover:bg-green-600 text-white font-bold rounded-full transition-transform transform hover:scale-105">
+            Start Game
+        </button>
+
+        <!-- Message Box -->
+        <div id="message-box" class="message-box hidden">
+            <h3 id="message-heading" class="text-2xl font-bold text-white mb-2"></h3>
+            <p id="message-text" class="text-gray-300 mb-6"></p>
+            <button id="message-button" class="px-8 py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-full transition-transform transform hover:scale-105">
+                OK
+            </button>
+        </div>
+    </div>
+
+    <script>
+        window.onload = function() {
+            // === Game State Variables ===
+            let gamePlaying = false;
+            let level = 1;
+            let score = 0;
+            let sequence = [];
+            let playerSequence = [];
+            let isPlayerTurn = false;
+            let notes = []; // Array to hold the tone synth instances
+            const notePads = document.getElementById('game-board');
+            
+            // === UI Elements ===
+            const startButton = document.getElementById('start-button');
+            const levelDisplay = document.getElementById('level-display');
+            const scoreDisplay = document.getElementById('score-display');
+            const messageBox = document.getElementById('message-box');
+            const messageHeading = document.getElementById('message-heading');
+            const messageText = document.getElementById('message-text');
+            const messageButton = document.getElementById('message-button');
+
+            // === Game Data ===
+            const notePadsData = [
+                { id: 0, note: "C4", color: "bg-red-500", glowColor: "red" },
+                { id: 1, note: "E4", color: "bg-blue-500", glowColor: "blue" },
+                { id: 2, note: "G4", color: "bg-yellow-500", glowColor: "yellow" },
+                { id: 3, note: "C5", color: "bg-green-500", glowColor: "green" }
+            ];
+
+            // === Game Functions ===
+
+            // Creates and returns a single Tone.Synth instance
+            function createSynth() {
+                return new Tone.Synth({
+                    oscillator: { type: "square" },
+                    envelope: {
+                        attack: 0.005,
+                        decay: 0.1,
+                        sustain: 0.1,
+                        release: 0.5
+                    }
+                }).toDestination();
+            }
+
+            // Initializes the game pads and the synths
+            function initializeGame() {
+                notePadsData.forEach(pad => {
+                    notes.push(createSynth());
+                    const padElement = document.createElement('div');
+                    padElement.className = `note-pad ${pad.color}`;
+                    padElement.dataset.id = pad.id;
+                    padElement.style.setProperty('--color', pad.glowColor);
+                    padElement.addEventListener('click', () => {
+                        if (isPlayerTurn) {
+                            handlePlayerClick(pad);
+                        }
+                    });
+                    notePads.appendChild(padElement);
+                });
+            }
+
+            function startGame() {
+                // Ensure audio context is running on user interaction
+                if (Tone.context.state !== 'running') {
+                    Tone.start();
+                }
+
+                gamePlaying = true;
+                level = 1;
+                score = 0;
+                sequence = [];
+                isPlayerTurn = false;
+                startButton.style.display = 'none';
+                updateUI();
+                setTimeout(playSequence, 500);
+            }
+
+            function playSequence() {
+                isPlayerTurn = false;
+                playerSequence = [];
+                // Add a new random note to the sequence
+                const randomPad = notePadsData[Math.floor(Math.random() * notePadsData.length)];
+                sequence.push(randomPad.id);
+
+                let i = 0;
+                const interval = setInterval(() => {
+                    if (i < sequence.length) {
+                        const padId = sequence[i];
+                        const padData = notePadsData.find(p => p.id === padId);
+                        highlightPad(padData);
+                        i++;
+                    } else {
+                        clearInterval(interval);
+                        isPlayerTurn = true;
+                    }
+                }, 750); // Speed of the melody
+            }
+
+            function highlightPad(pad) {
+                const padElement = notePads.querySelector(`[data-id="${pad.id}"]`);
+                if (padElement) {
+                    notes[pad.id].triggerAttackRelease(pad.note, "8n");
+                    padElement.classList.add('glow');
+                    setTimeout(() => {
+                        padElement.classList.remove('glow');
+                    }, 500);
+                }
+            }
+
+            function handlePlayerClick(pad) {
+                playerSequence.push(pad.id);
+                highlightPad(pad);
+
+                if (playerSequence[playerSequence.length - 1] !== sequence[playerSequence.length - 1]) {
+                    // Incorrect note
+                    gameOver();
+                } else if (playerSequence.length === sequence.length) {
+                    // Correct sequence
+                    score++;
+                    level++;
+                    updateUI();
+                    isPlayerTurn = false;
+                    setTimeout(playSequence, 1000);
+                }
+            }
+
+            function gameOver() {
+                gamePlaying = false;
+                showMessage(
+                    "Game Over!",
+                    `Your final score is: ${score}<br>Your final level: ${level}`,
+                    "Play Again",
+                    startGame
+                );
+            }
+
+            function updateUI() {
+                levelDisplay.textContent = level;
+                scoreDisplay.textContent = score;
+            }
+
+            // Function to show a custom message box
+            function showMessage(heading, text, buttonText, onButtonClick) {
+                messageHeading.innerText = heading;
+                messageText.innerHTML = text;
+                messageButton.innerText = buttonText;
+                messageButton.onclick = () => {
+                    messageBox.style.display = 'none';
+                    if (onButtonClick) onButtonClick();
+                };
+                messageBox.style.display = 'flex';
+            }
+
+            // === Event Listeners and Initial Setup ===
+            startButton.addEventListener('click', startGame);
+
+            initializeGame();
+
+            showMessage(
+                "Melody Maker",
+                "Repeat the musical sequence to win! Press start to begin.",
+                "Start Game",
+                () => { startButton.style.display = 'block'; }
+            );
+        };
+    </script>
+</body>
+</html>

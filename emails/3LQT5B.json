@@ -1,0 +1,36 @@
+{
+    "referenceCode": "3LQT5B",
+    "subjectLine": "",
+    "preheaderText": "",
+    "backgroundImage": "",
+    "logoUrl": "https:\/\/eposaudioevents.com\/emailtemplates\/uploads\/img_683f0affc30f2.png",
+    "senderName": "",
+    "senderEmail": "",
+    "senderMobile": "",
+    "personalizationType": "none",
+    "region": "NORD",
+    "audience": "channel",
+    "emailFrom": "",
+    "sendTime": "",
+    "articleBlocks": [
+        {
+            "position": 1,
+            "type": "single"
+        }
+    ],
+    "articles": {
+        "1": {
+            "type": "single",
+            "mainImage": "https:\/\/eposaudioevents.com\/emailtemplates\/uploads\/img_684aca7e9c312.png",
+            "header": "test article",
+            "headerAlignment": "center",
+            "headerFontWeight": "400",
+            "content": "<p>\ud83d\ude42<\/p>",
+            "contentAlignment": "left",
+            "buttonText": "",
+            "buttonUrl": "",
+            "backgroundColor": "#ffffff"
+        }
+    },
+    "createdBy": "Neil"
+}

@@ -1,0 +1,1125 @@
+/**
+ * EmailPOS Main Application Logic
+ *
+ * This file controls all the client-side interactivity of the email editor,
+ * including DOM manipulation, event handling, AJAX calls to the PHP backend,
+ * and live preview updates.
+ *
+ * @version 2.0.2
+ * @date 2025-06-26
+ */
+
+// Quill.js Emoji Module registration (MUST be done before Quill is initialized)
+// Ensure these script tags are loaded in emailpos.php *before* main.js
+// <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+// <script src="https://cdn.jsdelivr.net/npm/quill-emoji@0.2.0/dist/quill-emoji.js"></script>
+// <link href="https://cdn.jsdelivr.net/npm/quill-emoji@0.2.0/dist/quill-emoji.css" rel="stylesheet">
+
+
+// Define Quill.js global if not already defined (for custom modules)
+// This is important for Quill to register the modules correctly.
+if (typeof Quill !== 'undefined') {
+    const Delta = Quill.import('delta');
+    const Embed = Quill.import('blots/embed');
+    const Keyboard = Quill.import('modules/keyboard');
+
+    class CustomEmojiBlot extends Embed {
+        static blotName = 'emoji';
+        static tagName = 'span';
+        static className = 'emoji';
+
+        static create(value) {
+            const node = super.create();
+            node.innerHTML = value;
+            return node;
+        }
+
+        static value(node) {
+            return node.innerHTML;
+        }
+    }
+
+    class CustomKeyboard extends Keyboard {
+        constructor(quill, options) {
+            super(quill, options);
+            this.addBinding({
+                key: 13, // Enter key
+                collapsed: true,
+                handler: this.handleEnter.bind(this)
+            });
+        }
+
+        handleEnter(range, context) {
+            // Default behavior (insert newline)
+            this.quill.insertText(range.index, '\n', Quill.sources.USER);
+            this.quill.setSelection(range.index + 1, Quill.sources.SILENT);
+            return false; // Prevent default Quill new line behavior
+        }
+    }
+
+    Quill.register(CustomEmojiBlot);
+    // You might also need to register custom modules for emoji and translate if they aren't auto-registered
+    // from the external script or if you're building them custom.
+    // For `quill-emoji`, it usually registers itself. The error suggests it's not being loaded.
+    // Let's assume Quill.register() is handled by the CDN for quill-emoji for now, and focus on load order.
+}
+
+
+// Wait for the DOM to be fully loaded before initializing the app
+document.addEventListener('DOMContentLoaded', () => {
+
+    // --- GLOBAL STATE & VARIABLES --- //
+    let articleBlocks = [];
+    let currentReferenceCode = null;
+    let selectedArticleIndex = -1; // New property to track selected block for actions
+    let quillEditors = {}; // Stores Quill instances keyed by article block index
+    let currentQuillEditor = null; // To track the currently focused Quill editor
+    let currentPersonalizationType = 'none';
+    let allSavedBlocks = []; // Cache for reusable blocks
+    let debounceTimeout = null; // For debounce utility
+
+
+    // --- DOM ELEMENT SELECTORS --- //
+    // Grouping all DOM element selections at the start for clarity and efficiency.
+    const step1Section = document.getElementById('step1-section');
+    const mainContainer = document.getElementById('mainContainer');
+    const codeContainerWrapper = document.getElementById('codeContainerWrapper');
+    const layoutForm = document.getElementById('layoutForm');
+    const contentForm = document.getElementById('contentForm');
+    const articleBlocksDiv = document.getElementById('articleBlocks');
+    const htmlOutputTextarea = document.getElementById('htmlOutput');
+    const livePreviewIframe = document.getElementById('live-preview-iframe');
+
+    // Buttons from emailpos.php (Step 1 and Step 3)
+    const openSearchModalBtn = document.getElementById('openSearchModalBtn'); // Corrected ID as per HTML
+    const createLoadEmailBtn = layoutForm.querySelector('button[type="submit"]'); // "Create / Load Email" button
+    const duplicateEmailBtn = layoutForm.querySelector('button[onclick="duplicateEmailFromLayoutForm()"]'); // "Duplicate Email" button
+
+    const generateAndSaveEmailBtn = document.getElementById('generateAndSaveEmailBtn'); // Assuming this ID exists now
+    const copyHtmlBtn = document.getElementById('copyHtmlBtn'); // Assuming this ID exists now
+    const downloadHtmlBtn = document.getElementById('downloadHtmlBtn'); // Assuming this ID exists now
+    const saveAsEmailBtn = document.getElementById('saveAsEmailBtn'); // Assuming this ID exists now
+    const sendTestEmailInput = document.getElementById('testEmailRecipient');
+    const sendTestEmailButton = document.getElementById('sendTestEmailButton'); // Assuming this ID exists now
+
+    // Buttons for Article Block Actions (Step 2 - below h2 "Email Content")
+    const addArticleButton = document.querySelector('#block-actions button[onclick="addArticleBlock()"]');
+    const addSignOffButton = document.querySelector('#block-actions button[onclick="addSignOffBlock()"]');
+    const loadSavedBlockBtn = document.getElementById('load-saved-block-btn');
+    const globalTranslateButton = document.getElementById('globalTranslateButton');
+    const moveUpBtn = document.getElementById('moveUpBtn');
+    const moveDownBtn = document.getElementById('moveDownBtn');
+    const removeBtn = document.getElementById('removeBtn');
+
+
+    // Modals and Modal Controls (from modals.html and associated elements)
+    const modalBackdrop = document.getElementById('modalBackdrop');
+    const searchEmailModal = document.getElementById('searchEmailModal');
+    const imageSelectorModal = document.getElementById('imageSelectorModal');
+    const saveAsModal = document.getElementById('saveAsModal');
+    const loadBlockModal = document.getElementById('loadBlockModal');
+    const translateModal = document.getElementById('translateModal');
+    const confirmationModal = document.getElementById('confirmationModal');
+    const messageModal = document.getElementById('messageModal');
+    const personalizationTagModal = document.getElementById('personalizationTagModal'); // For managing tags, not personalization dropdown
+
+    // Confirmation Modal specific elements
+    const confirmationModalTitle = document.getElementById('confirmationModalTitle');
+    const confirmationModalMessage = document.getElementById('confirmationModalMessage');
+    const confirmYesBtn = document.getElementById('confirmYesBtn');
+    const confirmNoBtn = document.getElementById('confirmNoBtn');
+    const confirmOkBtn = document.getElementById('confirmOkBtn');
+    let confirmationCallback = null; // Stores callback for confirmation modal
+
+    // Message Modal specific elements
+    const messageModalTitle = document.getElementById('messageModalTitle');
+    const messageModalText = document.getElementById('messageModalText');
+
+    // Search Email Modal specific elements
+    const searchEmailInput = document.getElementById('searchEmailInput');
+    const performSearchBtn = document.getElementById('performSearchBtn');
+    const searchResultsList = document.getElementById('searchResultsList');
+    const noSearchResults = document.getElementById('noSearchResults');
+
+    // Save As Modal specific elements
+    const newReferenceCodeInput = document.getElementById('newReferenceCode');
+    const newEmailTitleInput = document.getElementById('newEmailTitle');
+    const confirmSaveAsBtn = document.getElementById('confirmSaveAsBtn');
+
+    // Load Block Modal specific elements
+    const blockSearchInput = document.getElementById('blockSearchInput');
+    const performBlockSearchBtn = document.getElementById('performBlockSearchBtn');
+    const savedBlocksList = document.getElementById('savedBlocksList');
+    const noSavedBlocks = document.getElementById('noSavedBlocks');
+
+    // Translate Modal specific elements
+    const originalTextarea = document.getElementById('originalText');
+    const translatedTextarea = document.getElementById('translatedText');
+    const targetLanguageSelect = document.getElementById('targetLanguage');
+    const initiateTranslationBtn = document.getElementById('initiateTranslationBtn');
+
+    // Personalization Tag Modal specific elements
+    const newTagInput = document.getElementById('newTagInput');
+    const addTagBtn = document.getElementById('addTagBtn');
+    const availableTagsList = document.getElementById('availableTagsList');
+
+    // Personalization dropdown (in preview header)
+    const personalizationButton = document.getElementById('personalizationButton');
+    const personalizationDropdown = document.getElementById('personalizationDropdown');
+
+
+    // --- AppConfig (Passed from PHP) --- //
+    // This object is populated in emailpos.php right before main.js is loaded.
+    // It contains BASE_APP_URL, user info, and default settings.
+    const AppConfig = window.AppConfig || {};
+
+
+    // --- UTILITY FUNCTIONS --- //
+
+    /**
+     * Helper for making API calls.
+     * @param {string} endpoint The PHP API endpoint (e.g., 'save_email.php').
+     * @param {Object} data The data to send in the request body.
+     * @returns {Promise<Object>} The JSON response from the API.
+     */
+    const apiCall = async (endpoint, data) => {
+        try {
+            const response = await fetch(`${AppConfig.base_url}api/${endpoint}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('API call failed:', endpoint, error);
+            showModalMessage('API Error', `Could not connect to the server or API failed: ${error.message}`);
+            throw error; // Re-throw to allow further error handling
+        }
+    };
+
+    /**
+     * Generates a unique 5-character alphanumeric reference code.
+     * @returns {string} The unique reference code.
+     */
+    const generateReferenceCode = () => {
+        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        let result = '';
+        for (let i = 0; i < 5; i++) {
+            result += characters.charAt(Math.floor(Math.random() * characters.length));
+        }
+        return result;
+    };
+
+    /**
+     * Displays a modal and its backdrop.
+     * @param {HTMLElement} modalElement The modal DOM element to show.
+     */
+    const showModal = (modalElement) => {
+        if (!modalBackdrop || !modalElement) {
+            console.error('Error: Modal backdrop or modal element not found for showModal.');
+            return;
+        }
+        modalBackdrop.style.display = 'block';
+        modalElement.style.display = 'block';
+        document.body.classList.add('modal-open');
+    };
+
+    /**
+     * Hides a modal and its backdrop.
+     * @param {HTMLElement} modalElement The modal DOM element to hide.
+     */
+    const hideModal = (modalElement) => {
+        if (!modalElement) return;
+        modalElement.style.display = 'none';
+        // Only hide backdrop if no other modals are open
+        const openModals = document.querySelectorAll('.app-modal[style*="display: block"]');
+        if (openModals.length === 0 && modalBackdrop) {
+            modalBackdrop.style.display = 'none';
+            document.body.classList.remove('modal-open');
+        }
+    };
+
+    /**
+     * Shows a confirmation modal with customizable buttons.
+     * @param {string} title - The title for the modal.
+     * @param {string} message - The message content.
+     * @param {Function} onConfirm - Callback for 'Yes' or 'OK'.
+     * @param {Function} [onCancel=null] - Optional callback for 'No'.
+     * @param {boolean} [isAlert=false] - If true, shows only an 'OK' button.
+     */
+    const showConfirmationModal = (title, message, onConfirm, onCancel = null, isAlert = false) => {
+        if (!confirmationModal || !confirmationModalTitle || !confirmationModalMessage || !confirmYesBtn || !confirmNoBtn || !confirmOkBtn) {
+            console.error('Confirmation modal elements not found.');
+            alert(`${title}: ${message}`); // Fallback to alert
+            return;
+        }
+
+        confirmationModalTitle.textContent = title;
+        confirmationModalMessage.textContent = message;
+
+        confirmYesBtn.style.display = isAlert ? 'none' : 'inline-block';
+        confirmNoBtn.style.display = isAlert ? 'none' : 'inline-block';
+        confirmOkBtn.style.display = isAlert ? 'inline-block' : 'none';
+
+        confirmationCallback = onConfirm; // Store the main callback
+
+        // Remove existing listeners to prevent duplicates
+        confirmYesBtn.onclick = null;
+        confirmNoBtn.onclick = null;
+        confirmOkBtn.onclick = null;
+
+        if (isAlert) {
+            confirmOkBtn.onclick = () => {
+                hideModal(confirmationModal);
+                if (confirmationCallback) confirmationCallback();
+            };
+        } else {
+            confirmYesBtn.onclick = () => {
+                hideModal(confirmationModal);
+                if (confirmationCallback) confirmationCallback();
+            };
+            confirmNoBtn.onclick = () => {
+                hideModal(confirmationModal);
+                if (onCancel) onCancel(); // Call onCancel if provided
+            };
+        }
+        showModal(confirmationModal);
+    };
+
+    /**
+     * Shows a general message modal.
+     * @param {string} title - The title of the message.
+     * @param {string} message - The message content.
+     */
+    const showModalMessage = (title, message) => {
+        if (!messageModal || !messageModalTitle || !messageModalText) {
+            console.error('Message modal elements not found, falling back to alert.');
+            alert(`${title}: ${message}`);
+            return;
+        }
+        messageModalTitle.textContent = title;
+        messageModalText.textContent = message;
+        showModal(messageModal);
+    };
+
+    // Make hideMessageModal globally accessible as it's used in onclick for the message modal's OK button
+    window.hideMessageModal = () => {
+        hideModal(messageModal);
+    };
+
+
+    // --- CORE APPLICATION LOGIC --- //
+
+    /**
+     * Handles the submission of the initial form in Step 1.
+     * Loads an existing email or prepares the UI for creating a new one.
+     */
+    const handleLayoutFormSubmit = async () => {
+        const referenceCodeInput = document.getElementById('referenceCode');
+        const referenceCode = referenceCodeInput.value.trim();
+        let savedData = null;
+
+        if (referenceCode) {
+            try {
+                const response = await apiCall('fetch_email.php', { code: referenceCode });
+                if (!response.success) {
+                    showModalMessage('Error', `Failed to load email: ${response.message}`);
+                    return;
+                }
+                savedData = response.data;
+            } catch (error) {
+                console.error('Error fetching email:', error);
+                showModalMessage('Error', `An error occurred while fetching email: ${error.message}`);
+                return;
+            }
+        }
+
+        // Determine the action and set the reference code
+        const urlParams = new URLSearchParams(window.location.search);
+        const action = urlParams.get('action'); // Get action from URL
+        if (action === 'duplicate' && savedData) {
+            currentReferenceCode = generateReferenceCode();
+            showModalMessage('Success', 'Email duplicated with a new reference code.');
+        } else if (savedData) {
+            currentReferenceCode = savedData.referenceCode;
+        } else {
+            currentReferenceCode = generateReferenceCode();
+        }
+
+        // Reset and populate the form
+        resetEditorState(savedData);
+        populateForms(savedData); // This will update the main form fields based on savedData or defaults
+        renderArticleBlocks(); // This will render the article blocks based on articleBlocks array
+
+        // Transition UI from Step 1 to Step 2
+        step1Section.style.display = 'none';
+        mainContainer.style.display = 'flex';
+        codeContainerWrapper.style.display = 'block';
+
+        updatePersonalizationUI();
+        generateHtmlAndPreview(); // Generate initial preview after loading/creating
+    };
+
+    /**
+     * Resets the editor's internal state.
+     * @param {object|null} savedData - The loaded email data, if any.
+     */
+    const resetEditorState = (savedData = null) => {
+        // Clear all Quill instances to prevent memory leaks and reinitialize clean ones
+        Object.values(quillEditors).forEach(editor => {
+            if (editor && editor.editor) { // Check if editor object and its inner editor exist
+                editor.editor.destroy(); // Quill doesn't have .destroy, but this conceptually clears it
+            }
+        });
+        quillEditors = {}; // Reset the storage for Quill instances
+
+        if (savedData) {
+            // Reconstruct the articleBlocks array from the loaded data for ordering
+            // Assuming savedData structure has a main 'article_blocks' array
+            articleBlocks = savedData.article_blocks || [];
+            // For older data without a structured array, try to infer from 'articles' object
+            if (articleBlocks.length === 0 && savedData.articles) {
+                articleBlocks = Object.keys(savedData.articles).map(pos => ({
+                    position: parseInt(pos),
+                    type: savedData.articles[pos].type,
+                    // Copy existing data from old structure if applicable
+                    title: savedData.articles[pos].header || '',
+                    body: savedData.articles[pos].content || '',
+                    // Add placeholders for new fields if not present in old data
+                    cta_text: '',
+                    cta_url: '',
+                    image_url: '',
+                    personalization_type: 'none'
+                })).sort((a, b) => a.position - b.position);
+            }
+            currentPersonalizationType = savedData.personalizationType || 'none'; // Revert to AppConfig logic
+        } else {
+            articleBlocks = []; // Start with empty if no saved data
+            currentPersonalizationType = document.querySelector('input[name="personalizationType"]:checked')?.value || 'none';
+        }
+        selectedArticleIndex = -1; // No block is selected initially
+    };
+
+    /**
+     * Populates the main form fields from saved data or with defaults.
+     * @param {object|null} savedData - The loaded email data.
+     */
+    const populateForms = (savedData = null) => {
+        document.getElementById('displayReferenceCode').textContent = currentReferenceCode;
+        document.getElementById('currentReferenceCodeDisplay').style.display = 'block';
+
+        if(savedData?.created_by) { // Check for 'created_by' as per your database structure
+            document.getElementById('createdByDisplay').textContent = savedData.created_by;
+            document.getElementById('createdByLabel').style.display = 'inline';
+        } else {
+             document.getElementById('createdByLabel').style.display = 'none';
+        }
+
+        // Set form values, using savedData or defaults (match your PHP and DB fields)
+        document.getElementById('subjectLine').value = savedData?.subject || ''; // Assuming 'subject'
+        document.getElementById('preheaderText').value = savedData?.preheader || ''; // Assuming 'preheader'
+        document.getElementById('backgroundImage').value = savedData?.main_image || ''; // Assuming 'main_image'
+        document.getElementById('region').value = savedData?.region || 'UKI'; // Assuming 'region'
+        document.getElementById('emailFrom').value = savedData?.from_email || ''; // Assuming 'from_email'
+        document.getElementById('senderName').value = savedData?.sender_name || ''; // Assuming 'sender_name'
+        document.getElementById('senderEmail').value = savedData?.sender_email || ''; // Assuming 'sender_email'
+
+        // Set the personalization radio button
+        const radio = document.querySelector(`input[name="personalizationType"][value="${currentPersonalizationType}"]`);
+        if (radio) radio.checked = true;
+    };
+
+    /**
+     * Adds a new article block to the email.
+     * @param {string} type - The type of article block ('single', 'double', 'sign_off').
+     * @param {Object} [initialData={}] - Optional initial data for the block.
+     */
+    const addArticleBlock = (type = 'single', initialData = {}) => {
+        const newBlock = {
+            id: `article-block-${Date.now()}-${articleBlocks.length}`, // Unique ID for DOM element
+            type: type,
+            title: initialData.title || '',
+            body: initialData.body || '',
+            image_url: initialData.image_url || '',
+            cta_text: initialData.cta_text || '',
+            cta_url: initialData.cta_url || '',
+            personalization_type: initialData.personalization_type || 'none'
+        };
+        articleBlocks.push(newBlock);
+        renderArticleBlocks(); // Re-render all blocks
+        selectArticleBlock(articleBlocks.length - 1); // Select the newly added block
+        generateHtmlAndPreview(); // Update preview after adding
+    };
+
+    /**
+     * Adds a new sign-off block to the email.
+     */
+    const addSignOffBlock = () => {
+        addArticleBlock('sign_off'); // Reuse addArticleBlock for sign-off type
+    };
+
+    /**
+     * Renders all article blocks based on the global `articleBlocks` array.
+     */
+    const renderArticleBlocks = () => {
+        articleBlocksDiv.innerHTML = ''; // Clear existing blocks
+        Object.values(quillEditors).forEach(editor => {
+            // Destroy Quill instances to prevent memory leaks
+            // Quill doesn't have a direct `destroy()` on the editor instance itself,
+            // but ensuring the editor container is cleared often handles this.
+            // If issues persist, consider a more robust way to manage Quill lifecycle.
+        });
+        quillEditors = {}; // Clear old Quill instances for re-initialization
+
+        articleBlocks.forEach((block, index) => {
+            const blockElement = document.createElement('div');
+            blockElement.className = `article-block ${index === selectedArticleIndex ? 'selected' : ''}`;
+            blockElement.id = block.id; // Use the block's unique ID
+            blockElement.dataset.index = index; // Store its current index
+
+            // Generate the inner HTML for the block based on its type
+            blockElement.innerHTML = getBlockTemplate(block.type, index, block); // Pass the entire block object
+
+            articleBlocksDiv.appendChild(blockElement);
+
+            // Initialize Quill editor(s) for the new block
+            initializeQuillForBlock(block.type, index, block);
+
+            // Attach listeners specific to this block
+            attachArticleBlockListeners(blockElement, index);
+        });
+
+        updateMoveButtons(); // Update disabled states for move buttons
+    };
+
+    /**
+     * Creates the HTML form fields for a given block type.
+     * @param {string} type - The type of block ('single', 'double', 'sign_off').
+     * @param {number} index - The current index of the block.
+     * @param {object} data - The data for this specific block.
+     * @returns {string} - The HTML string for the block's form.
+     */
+    const getBlockTemplate = (type, index, data) => {
+        let html = `
+            <h4>Block ${index + 1} (${type === 'single' ? 'Single Column' : (type === 'double' ? 'Two Column' : 'Sign-off')})</h4>
+            <div class="block-controls">
+                <button class="remove-block-btn action-button" data-index="${index}"><i class="fas fa-trash-alt"></i> Remove</button>
+                <button class="move-up-btn format-button" data-index="${index}"><i class="fas fa-arrow-up"></i> Move Up</button>
+                <button class="move-down-btn format-button" data-index="${index}"><i class="fas fa-arrow-down"></i> Move Down</button>
+            </div>
+        `;
+
+        if (type === 'single' || type === 'double') {
+            html += `
+                <div class="form-group">
+                    <label for="article-${index}-title">Title</label>
+                    <input type="text" id="article-${index}-title" value="${escapeHtml(data.title)}" placeholder="Enter article title">
+                </div>
+            `;
+        }
+
+        if (type === 'single') {
+            html += `
+                <div class="form-group">
+                    <label>Body Content</label>
+                    <div id="editor-article-${index}-body" class="quill-editor-container"></div>
+                </div>
+                <div class="form-group">
+                    <label for="article-${index}-image-url">Image URL</label>
+                    <div class="input-with-button">
+                        <input type="text" id="article-${index}-image-url" value="${escapeHtml(data.image_url)}" placeholder="Enter image URL">
+                        <button type="button" class="select-image-button" data-target-input-id="article-${index}-image-url">Select</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="article-${index}-cta-text">Call to Action Text</label>
+                    <input type="text" id="article-${index}-cta-text" value="${escapeHtml(data.cta_text)}" placeholder="e.g., Read More">
+                </div>
+                <div class="form-group">
+                    <label for="article-${index}-cta-url">Call to Action URL</label>
+                    <input type="text" id="article-${index}-cta-url" value="${escapeHtml(data.cta_url)}" placeholder="e.g., https://example.com/article">
+                </div>
+            `;
+        } else if (type === 'double') {
+            html += `
+                <div class="double-column-layout">
+                    <div class="column-left">
+                        <div class="form-group">
+                            <label>Left Column Content</label>
+                            <div id="editor-article-${index}-left-body" class="quill-editor-container"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="article-${index}-left-image-url">Left Image URL</label>
+                            <div class="input-with-button">
+                                <input type="text" id="article-${index}-left-image-url" value="${escapeHtml(data.left_image_url || '')}" placeholder="Enter image URL">
+                                <button type="button" class="select-image-button" data-target-input-id="article-${index}-left-image-url">Select</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="article-${index}-left-cta-text">Left CTA Text</label>
+                            <input type="text" id="article-${index}-left-cta-text" value="${escapeHtml(data.left_cta_text || '')}" placeholder="e.g., Learn More">
+                        </div>
+                        <div class="form-group">
+                            <label for="article-${index}-left-cta-url">Left CTA URL</label>
+                            <input type="text" id="article-${index}-left-cta-url" value="${escapeHtml(data.left_cta_url || '')}" placeholder="e.g., https://example.com/left">
+                        </div>
+                    </div>
+                    <div class="column-right">
+                        <div class="form-group">
+                            <label>Right Column Content</label>
+                            <div id="editor-article-${index}-right-body" class="quill-editor-container"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="article-${index}-right-image-url">Right Image URL</label>
+                            <div class="input-with-button">
+                                <input type="text" id="article-${index}-right-image-url" value="${escapeHtml(data.right_image_url || '')}" placeholder="Enter image URL">
+                                <button type="button" class="select-image-button" data-target-input-id="article-${index}-right-image-url">Select</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="article-${index}-right-cta-text">Right CTA Text</label>
+                            <input type="text" id="article-${index}-right-cta-text" value="${escapeHtml(data.right_cta_text || '')}" placeholder="e.g., Discover More">
+                        </div>
+                        <div class="form-group">
+                            <label for="article-${index}-right-cta-url">Right CTA URL</label>
+                            <input type="text" id="article-${index}-right-cta-url" value="${escapeHtml(data.right_cta_url || '')}" placeholder="e.g., https://example.com/right">
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else if (type === 'sign_off') {
+            html += `
+                <div class="form-group">
+                    <label>Sign-off Content</label>
+                    <div id="editor-article-${index}-body" class="quill-editor-container"></div>
+                </div>
+            `;
+        }
+
+        // Add personalization type radio buttons to all block types
+        html += `
+            <div class="form-group">
+                <label>Personalization Type</label>
+                <div class="radio-group-personalization">
+                    <label class="radio-label">
+                        <input type="radio" name="personalization-type-${index}" value="none" ${data.personalization_type === 'none' ? 'checked' : ''}>
+                        <span class="radio-icon fas fa-ban"></span> None
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="personalization-type-${index}" value="country" ${data.personalization_type === 'country' ? 'checked' : ''}>
+                        <span class="radio-icon fas fa-globe"></span> Country
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="personalization-type-${index}" value="industry" ${data.personalization_type === 'industry' ? 'checked' : ''}>
+                        <span class="radio-icon fas fa-industry"></span> Industry
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="personalization-type-${index}" value="company_size" ${data.personalization_type === 'company_size' ? 'checked' : ''}>
+                        <span class="radio-icon fas fa-building"></span> Company Size
+                    </label>
+                </div>
+            </div>
+        `;
+
+        return html;
+    };
+
+
+    /**
+     * Initializes Quill.js editor for a newly rendered block.
+     * @param {string} type - The block type.
+     * @param {number} index - The index of the block.
+     * @param {object} data - The data for the block.
+     */
+    const initializeQuillForBlock = (type, index, data) => {
+        const createQuillInstance = (editorId, initialHtmlContent) => {
+            const editorElement = document.getElementById(editorId);
+            if (!editorElement) {
+                console.warn(`Quill editor element #${editorId} not found.`);
+                return null;
+            }
+
+            // If an editor already exists for this ID, return it (avoid re-initializing)
+            if (quillEditors[editorId]) {
+                return quillEditors[editorId];
+            }
+
+            // Register any custom Quill modules (if they're not global)
+            // Ensure quill-emoji is loaded via CDN in HTML
+            // This is critical for the emoji and translate icons to work
+            const toolbarOptions = [
+                ['bold', 'italic', 'underline', 'strike'],
+                [{ 'header': [1, 2, 3, false] }],
+                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                [{ 'indent': '-1'}, { 'indent': '+1' }],
+                [{ 'color': AppConfig.allowed_text_colors }, { 'background': AppConfig.allowed_bg_colors }],
+                [{ 'font': [] }],
+                [{ 'align': [] }],
+                ['link', 'image'],
+                ['clean'],
+                ['emoji'], // Emoji button
+                [{ 'personalization': ['Insert Tag'] }], // Custom personalization dropdown (if applicable)
+                ['translate-icon'] // Custom translate button
+            ];
+
+            const quill = new Quill(`#${editorId}`, {
+                modules: {
+                    toolbar: {
+                        container: toolbarOptions,
+                        handlers: {
+                            // Custom handler for "Insert Tag" if using a custom dropdown
+                            // 'personalization': function(value) {
+                            //     // Logic to open a personalization tag modal or dropdown
+                            //     // For now, it's handled by a separate button for personalizationDropdown
+                            // },
+                            'image': function() { // Override default image handler
+                                const range = quill.getSelection();
+                                if (range) {
+                                    // Store current editor and range for later insertion
+                                    currentQuillEditor = quill;
+                                    showModal(imageSelectorModal);
+                                    // Pass target input ID for image URL if needed by the modal
+                                    imageSelectorModal.dataset.targetInputId = `quill-image-${editorId}`;
+                                }
+                            },
+                            'translate-icon': () => {
+                                currentQuillEditor = quill; // Set current editor
+                                originalTextarea.value = currentQuillEditor.getText(); // Pre-fill
+                                translatedTextarea.value = ''; // Clear translated
+                                showModal(translateModal);
+                            }
+                        }
+                    },
+                    // Ensure these emoji modules are properly loaded via CDN
+                    'emoji-toolbar': true,
+                    'emoji-textarea': true,
+                    'emoji-shortname': true,
+                    keyboard: {
+                        bindings: {
+                            // Custom binding for enter key to prevent extra newlines or apply custom logic
+                            enter: {
+                                key: 13,
+                                collapsed: true,
+                                handler: function(range, context) {
+                                    // Insert a new line
+                                    this.quill.insertText(range.index, '\n');
+                                    // Move cursor to the new line
+                                    this.quill.setSelection(range.index + 1);
+                                    // Return false to prevent Quill's default enter key behavior
+                                    return false;
+                                }
+                            }
+                        }
+                    }
+                },
+                theme: 'snow'
+            });
+
+            if (initialHtmlContent) {
+                // Set content using Quill's API, which handles HTML parsing
+                quill.clipboard.dangerouslyPasteHTML(0, initialHtmlContent);
+            }
+
+            quill.on('text-change', debounce(generateHtmlAndPreview, 500));
+            quill.on('selection-change', (range) => {
+                if (range) {
+                    currentQuillEditor = quill; // Update the globally tracked active editor
+                }
+            });
+            quillEditors[editorId] = quill;
+            return quill;
+        };
+
+        if (type === 'single' || type === 'sign_off') {
+            createQuillInstance(`editor-article-${index}-body`, data.body);
+        } else if (type === 'double') {
+            createQuillInstance(`editor-article-${index}-left-body`, data.left_body || '');
+            createQuillInstance(`editor-article-${index}-right-body`, data.right_body || '');
+        }
+    };
+
+    /**
+     * Attaches event listeners for block-specific actions (remove, move, input changes, image select).
+     * @param {HTMLElement} blockElement - The root DOM element of the article block.
+     * @param {number} index - The current index of the article block in the array.
+     */
+    const attachArticleBlockListeners = (blockElement, index) => {
+        // Input change listeners for text fields
+        blockElement.querySelectorAll('input[type="text"], input[type="url"]').forEach(input => {
+            input.addEventListener('input', debounce(() => {
+                const fieldId = input.id.split('-').slice(2).join('-'); // e.g., 'title', 'image-url', 'left-cta-text'
+                if (fieldId.startsWith('cta-')) {
+                    const ctaPart = fieldId.replace('cta-', ''); // 'text' or 'url'
+                    articleBlocks[index][`cta_${ctaPart}`] = input.value;
+                } else if (fieldId.includes('image-url')) {
+                    articleBlocks[index].image_url = input.value;
+                } else if (fieldId === 'title') {
+                    articleBlocks[index].title = input.value;
+                } else if (fieldId.startsWith('left-')) {
+                    const leftField = fieldId.replace('left-', '');
+                    articleBlocks[index][`left_${leftField}`] = input.value;
+                } else if (fieldId.startsWith('right-')) {
+                    const rightField = fieldId.replace('right-', '');
+                    articleBlocks[index][`right_${rightField}`] = input.value;
+                }
+                generateHtmlAndPreview();
+            }, 300));
+        });
+
+        // Radio button change listeners for personalization
+        blockElement.querySelectorAll(`input[name="personalization-type-${index}"]`).forEach(radio => {
+            radio.addEventListener('change', () => {
+                articleBlocks[index].personalization_type = radio.value;
+                generateHtmlAndPreview();
+            });
+        });
+
+        // Remove button
+        const removeButton = blockElement.querySelector('.remove-block-btn');
+        if (removeButton) {
+            removeButton.addEventListener('click', () => removeArticleBlock(index));
+        }
+
+        // Move Up button
+        const moveUpButton = blockElement.querySelector('.move-up-btn');
+        if (moveUpButton) {
+            moveUpButton.addEventListener('click', () => moveArticleBlock(index, -1));
+        }
+
+        // Move Down button
+        const moveDownButton = blockElement.querySelector('.move-down-btn');
+        if (moveDownButton) {
+            moveDownButton.addEventListener('click', () => moveArticleBlock(index, 1));
+        }
+
+        // Select Image button (within article block)
+        blockElement.querySelectorAll('.select-image-button').forEach(button => {
+            button.addEventListener('click', (event) => {
+                const targetInputId = event.target.dataset.targetInputId;
+                imageSelectorModal.dataset.targetInputId = targetInputId; // Store which input to update
+                showModal(imageSelectorModal);
+            });
+        });
+    };
+
+
+    /**
+     * Removes an article block.
+     * @param {number} index The index of the block to remove.
+     */
+    const removeArticleBlock = (index) => {
+        showConfirmationModal(
+            'Confirm Removal',
+            'Are you sure you want to remove this article block? This cannot be undone.',
+            () => {
+                articleBlocks.splice(index, 1);
+                // Re-initialize all Quill editors and re-render to ensure correct state
+                renderArticleBlocks();
+                generateHtmlAndPreview();
+            }
+        );
+    };
+
+    /**
+     * Moves an article block up or down.
+     * @param {number} index The current index of the block.
+     * @param {number} direction -1 for up, 1 for down.
+     */
+    const moveArticleBlock = (index, direction) => {
+        const newIndex = index + direction;
+        if (newIndex >= 0 && newIndex < articleBlocks.length) {
+            // Swap elements in the array
+            [articleBlocks[index], articleBlocks[newIndex]] = [articleBlocks[newIndex], articleBlocks[index]];
+
+            // Re-render to update DOM order and button states
+            renderArticleBlocks();
+            generateHtmlAndPreview();
+        }
+        updateMoveButtons(); // Re-evaluate disabled state after move
+    };
+
+    /**
+     * Updates the disabled state of move up/down buttons based on block position.
+     */
+    const updateMoveButtons = () => {
+        articleBlocks.forEach((block, index) => {
+            const blockElement = document.getElementById(block.id);
+            if (blockElement) {
+                const moveUpButton = blockElement.querySelector('.move-up-btn');
+                const moveDownButton = blockElement.querySelector('.move-down-btn');
+                if (moveUpButton) {
+                    moveUpButton.disabled = index === 0;
+                }
+                if (moveDownButton) {
+                    moveDownButton.disabled = index === articleBlocks.length - 1;
+                }
+            }
+        });
+    };
+
+    /**
+     * Gathers all form data from the editor.
+     * @returns {Object} An object containing all current email data.
+     */
+    const getCurrentFormData = () => {
+        const data = {
+            reference_code: currentReferenceCode, // Will be null for new emails
+            title: document.getElementById('subjectLine').value, // Renamed from emailTitle
+            subject: document.getElementById('subjectLine').value,
+            preheader: document.getElementById('preheaderText').value,
+            main_image: document.getElementById('backgroundImage').value, // Renamed from mainImage
+            region: document.getElementById('region').value,
+            from_email: document.getElementById('emailFrom').value, // Renamed from emailFrom
+            sender_name: document.getElementById('senderName').value, // Renamed from senderName
+            sender_email: document.getElementById('senderEmail').value, // Renamed from senderEmail
+            // Placeholder for other general settings that might be added later
+            article_blocks: []
+        };
+
+        articleBlocks.forEach((block, index) => {
+            let articleData = {
+                type: block.type,
+                personalization_type: block.personalization_type
+            };
+
+            if (block.type === 'single' || block.type === 'double') {
+                articleData.title = block.title;
+            }
+
+            if (block.type === 'single' || block.type === 'sign_off') {
+                const quillEditor = quillEditors[`editor-article-${index}-body`];
+                if (quillEditor) {
+                    articleData.body = quillEditor.root.innerHTML;
+                } else {
+                    articleData.body = block.body; // Fallback to stored data if editor not ready
+                }
+            }
+
+            if (block.type === 'single') {
+                articleData.image_url = block.image_url;
+                articleData.cta_text = block.cta_text;
+                articleData.cta_url = block.cta_url;
+            } else if (block.type === 'double') {
+                const leftQuill = quillEditors[`editor-article-${index}-left-body`];
+                if (leftQuill) articleData.left_body = leftQuill.root.innerHTML;
+                articleData.left_image_url = block.left_image_url;
+                articleData.left_cta_text = block.left_cta_text;
+                articleData.left_cta_url = block.left_cta_url;
+
+                const rightQuill = quillEditors[`editor-article-${index}-right-body`];
+                if (rightQuill) articleData.right_body = rightQuill.root.innerHTML;
+                articleData.right_image_url = block.right_image_url;
+                articleData.right_cta_text = block.right_cta_text;
+                articleData.right_cta_url = block.right_cta_url;
+            }
+            data.article_blocks.push(articleData);
+        });
+
+        return data;
+    };
+
+
+    /**
+     * Generates the final HTML for the email and updates the preview.
+     */
+    const generateHtmlAndPreview = async () => {
+        console.log("Generating HTML and updating preview...");
+        const formData = getCurrentFormData();
+
+        try {
+            const response = await apiCall('generate_html.php', formData);
+            if (response.success) {
+                const generatedHtml = response.html;
+                htmlOutputTextarea.value = generatedHtml;
+
+                // Update live preview iframe
+                const iframeDoc = livePreviewIframe.contentWindow.document;
+                iframeDoc.open();
+                iframeDoc.write(generatedHtml);
+                iframeDoc.close();
+            } else {
+                console.error('HTML generation failed:', response.message);
+                showModalMessage('Generation Error', `Failed to generate HTML: ${response.message}`);
+            }
+        } catch (error) {
+            console.error('Error generating HTML:', error);
+            showModalMessage('Generation Error', `An unexpected error occurred during HTML generation: ${error.message}`);
+        }
+    };
+
+    /**
+     * Displays search results in the search email modal.
+     * @param {Array<Object>} results - An array of email objects.
+     */
+    const displaySearchResults = (results) => {
+        searchResultsList.innerHTML = ''; // Clear previous results
+        if (results.length === 0) {
+            noSearchResults.style.display = 'block';
+            return;
+        }
+        noSearchResults.style.display = 'none';
+
+        // Create a table if not already present
+        let table = document.getElementById('searchResultsTable');
+        if (!table) {
+            table = document.createElement('table');
+            table.id = 'searchResultsTable';
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>Reference</th>
+                        <th>Title</th>
+                        <th>Subject</th>
+                        <th>Last Modified</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            `;
+            searchResultsList.appendChild(table);
+        }
+        const tbody = table.querySelector('tbody');
+        tbody.innerHTML = ''; // Clear existing rows
+
+        results.forEach(email => {
+            const row = tbody.insertRow();
+            row.insertCell().textContent = email.reference_code;
+            row.insertCell().textContent = email.title;
+            row.insertCell().textContent = email.subject;
+            row.insertCell().textContent = email.last_modified;
+
+            const actionsCell = row.insertCell();
+            const loadButton = document.createElement('button');
+            loadButton.textContent = 'Load';
+            loadButton.classList.add('action-button');
+            loadButton.onclick = () => loadEmail(email.reference_code);
+            actionsCell.appendChild(loadButton);
+
+            const deleteButton = document.createElement('button');
+            deleteButton.textContent = 'Delete';
+            deleteButton.classList.add('remove-button');
+            deleteButton.onclick = () => confirmDeleteEmail(email.reference_code);
+            actionsCell.appendChild(deleteButton);
+        });
+    };
+
+    /**
+     * Loads an email into the editor.
+     * @param {string} referenceCode The reference code of the email to load.
+     */
+    const loadEmail = async (referenceCode) => {
+        showConfirmationModal(
+            'Load Email',
+            'Loading a new email will discard unsaved changes. Continue?',
+            async () => {
+                try {
+                    const response = await apiCall('fetch_email.php', { code: referenceCode });
+                    if (response.success && response.data) {
+                        const emailData = response.data;
+                        currentReferenceCode = emailData.reference_code;
+
+                        // Populate form fields
+                        document.getElementById('subjectLine').value = emailData.subject || '';
+                        document.getElementById('preheaderText').value = emailData.preheader || '';
+                        document.getElementById('backgroundImage').value = emailData.main_image || '';
+                        document.getElementById('region').value = emailData.region || 'UKI';
+                        document.getElementById('emailFrom').value = emailData.from_email || '';
+                        document.getElementById('senderName').value = emailData.sender_name || '';
+                        document.getElementById('senderEmail').value = emailData.sender_email || '';
+                        // Populate created by display if available
+                        if (emailData.created_by) {
+                             document.getElementById('createdByDisplay').textContent = emailData.created_by;
+                             document.getElementById('createdByLabel').style.display = 'inline';
+                        } else {
+                             document.getElementById('createdByLabel').style.display = 'none';
+                        }
+
+
+                        // Clear existing article blocks and Quill editors
+                        articleBlocks = [];
+                        quillEditors = {}; // Reset Quill editors
+                        renderArticleBlocks(); // Clear DOM
+
+                        // Add article blocks from loaded data
+                        if (emailData.article_blocks && Array.isArray(emailData.article_blocks)) {
+                            // Re-add blocks with their saved data
+                            emailData.article_blocks.forEach(block => {
+                                // Default type to 'single' if not specified in saved data
+                                const type = block.type || 'single';
+                                addArticleBlock(type, block); // Pass type and full block data
+                            });
+                        } else {
+                            // If no article blocks, add a default one
+                            addArticleBlock();
+                        }
+
+                        // Update the reference code display
+                        document.getElementById('referenceCode').value = currentReferenceCode;
+
+                        showModalMessage('Email Loaded', `Email "${emailData.title}" loaded successfully!`);
+                        hideModal(searchEmailModal); // Close the search modal
+                        generateHtmlAndPreview(); // Update preview after loading
+                    } else {
+                        showModalMessage('Load Error', `Failed to load email: ${response.message || 'No data found.'}`);
+                    }
+                } catch (error) {
+                    console.error('Error loading email:', error);
+                    showModalMessage('Load Error', `An unexpected error occurred while loading email: ${error.message}`);
+                }
+            }
+        );
+    };
+
+    /**
+     * Confirms and deletes an email.
+     * @param {string} referenceCode The reference code of the email to delete.
+     */
+    const confirmDeleteEmail = (referenceCode) => {
+        showConfirmationModal(
+            'Confirm Delete',
+            `Are you sure you want to delete email with reference code: ${referenceCode}? This action cannot be undone.`,
+            async () => {
+                try {
+                    const response = await apiCall('delete_email.php', { reference_code: referenceCode });
+                    if (response.success) {
+                        showModalMessage('Deleted!', `Email ${referenceCode} deleted successfully.`);
+                        // Refresh search results if the modal is open
+                        if (searchEmailModal.style.display === 'block') {
+                            performSearchBtn.click(); // Re-run search
+                        }
+                        // If the deleted email was currently loaded, clear the editor
+                        if (currentReferenceCode === referenceCode) {
+                            resetEditor();
+                        }
+                    } else {
+                        showModalMessage('Delete Error', `Failed to delete email: ${response.message}`);
+                    }
+                } catch (error) {
+                    console.error('Error deleting email:', error);
+                    showModalMessage('Delete Error', `An unexpected error occurred while deleting: ${error.message}`);
+                }
+            }
+        );
+    };
+
+    /**
+     * Resets the editor to a clean state.
+     */
+    const resetEditor = () => {
+        currentReferenceCode = null;
+        document.getElementById('subjectLine').value = '';
+        document.getElementById('preheaderText').value = '';
+        document.getElementById('backgroundImage').value = '';
+        document.getElementById('region').value = 'UKI';
+        document.getElementById('emailFrom').value = '';
+        document.getElementById('senderName').value = '';
+        document.getElementById('senderEmail').value = '';
+        document

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_1" xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 490 496.97">
+  <!-- Generator: Adobe Illustrator 29.5.1, SVG Export Plug-In . SVG Version: 2.1.0 Build 141)  -->
+  <defs>
+    <style>
+      .st0 {
+        fill: none;
+        stroke-width: 14px;
+      }
+
+      .st0, .st1 {
+        stroke: #00a399;
+        stroke-miterlimit: 10;
+      }
+
+      .st1 {
+        fill: url(#radial-gradient);
+      }
+
+      .st2 {
+        fill: #44ead6;
+      }
+
+      .st3 {
+        fill: #ff5549;
+      }
+    </style>
+    <radialGradient id="radial-gradient" cx="234.48" cy="248.48" fx="234.48" fy="248.48" r="187.88" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset=".37" stop-color="#fdfefe"/>
+      <stop offset=".51" stop-color="#f6fbfb"/>
+      <stop offset=".6" stop-color="#eaf7f6"/>
+      <stop offset=".68" stop-color="#d9f1f0"/>
+      <stop offset=".75" stop-color="#c3e9e7"/>
+      <stop offset=".8" stop-color="#a8dfdc"/>
+      <stop offset=".86" stop-color="#87d4cf"/>
+      <stop offset=".91" stop-color="#62c6c0"/>
+      <stop offset=".95" stop-color="#37b6af"/>
+      <stop offset=".99" stop-color="#09a69c"/>
+      <stop offset="1" stop-color="#00a399"/>
+    </radialGradient>
+  </defs>
+  <path class="st1" d="M234.48,60.6c-103.76,0-187.88,84.12-187.88,187.88s84.12,187.88,187.88,187.88,187.88-84.12,187.88-187.88S338.24,60.6,234.48,60.6ZM268.15,250.24l-33.67,31.26-136.96-114.98,8.68-5.17h270.25l1.47,177.78-109.76-88.89h-.01,0Z"/>
+  <polyline class="st3" points="367.68 334.83 354.49 340.03 101.29 340.03 195.86 252.8 237.48 279.67 265.36 252.8 367.68 340.03"/>
+  <polygon class="st2" points="97.99 168.88 101.29 340.03 203.61 252.8 97.99 168.88"/>
+  <path class="st0" d="M369.1,340.03H101.29c-1.82,0-3.3-171.15-3.3-171.15,0-1.82,1.48-3.3,3.3-3.3h267.81c1.82,0,3.3,1.48,3.3,3.3v167.85c0,1.82-1.48,3.3-3.3,3.3h0Z"/>
+  <polyline class="st0" points="101.29 165.58 237.48 279.67 369.1 165.58"/>
+  <line class="st0" x1="201.95" y1="247.61" x2="99.64" y2="334.83"/>
+  <line class="st0" x1="270.08" y1="252.8" x2="372.4" y2="340.03"/>
+  <circle class="st0" cx="237.72" cy="251.01" r="187.88"/>
+</svg>

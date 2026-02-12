@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arcade Block Buster</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --epos-black: #131313;
+            --epos-white: #ffffff;
+            --epos-petrol: #00353d;
+            --epos-mint: #44ead6;
+            --epos-burgundy: #3f1e31;
+            --epos-coral: #ff5549;
+            --epos-dark-mint: #00a399;
+            --epos-grey: #a2a9ae;
+            --epos-light-grey: #eeeff1;
+            --epos-dark-petrol: #00242a;
+            --epos-light-dark-mint: #33b8af;
+        }
+        body {
+            font-family: 'Press Start 2P', cursive;
+            background-color: var(--epos-black);
+            color: var(--epos-mint);
+            user-select: none;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 800px;
+            height: 100%;
+            max-height: 600px;
+        }
+        canvas {
+            border: 2px solid var(--epos-white);
+            background-color: var(--epos-dark-petrol);
+            width: 100%;
+            height: 100%;
+        }
+        .ui-panel {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 600px;
+            margin-top: 10px;
+        }
+        .button {
+            background-color: var(--epos-coral);
+            color: var(--epos-white);
+            padding: 10px 20px;
+            border: 2px solid var(--epos-white);
+            cursor: pointer;
+            text-align: center;
+            font-size: 14px;
+            box-shadow: 4px 4px 0px var(--epos-white);
+            transition: all 0.1s ease-in-out;
+        }
+        .button:active {
+            box-shadow: 2px 2px 0px var(--epos-white);
+            transform: translate(2px, 2px);
+        }
+        .hidden {
+            display: none;
+        }
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+        .modal-content {
+            background-color: var(--epos-petrol);
+            padding: 30px;
+            border: 2px solid var(--epos-white);
+            box-shadow: 6px 6px 0px var(--epos-white);
+            text-align: center;
+            width: 90%;
+            max-width: 500px;
+        }
+        .modal-content h2 {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .modal-content p {
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        .modal-button {
+            margin-top: 20px;
+        }
+        .video-container {
+            position: relative;
+            width: 90%;
+            max-width: 700px;
+            background: var(--epos-black);
+            border: 2px solid var(--epos-white);
+        }
+        .video-container video {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        .video-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+        .video-overlay:hover {
+            opacity: 0.8;
+        }
+        .high-scores-table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+        .high-scores-table th, .high-scores-table td {
+            padding: 8px;
+            border: 1px solid var(--epos-mint);
+            text-align: left;
+        }
+        .high-scores-table th {
+            background-color: var(--epos-dark-mint);
+        }
+        .flash-brick {
+            animation: flash 0.3s forwards;
+        }
+        @keyframes flash {
+            0% { filter: brightness(1.0); }
+            50% { filter: brightness(1.5); }
+            100% { filter: brightness(1.0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-4xl mb-4 text-center">Arcade Block Buster</h1>
+        <div class="ui-panel">
+            <div class="flex-1 text-left text-2xl">Score: <span id="scoreDisplay">0</span></div>
+            <div class="flex-1 text-right text-2xl">Lives: <span id="livesDisplay">3</span></div>
+        </div>
+        <canvas id="gameCanvas"></canvas>
+        <div class="flex mt-4 gap-4">
+            <button id="startButton" class="button">Start</button>
+            <button id="pauseButton" class="button hidden">Pause</button>
+            <button id="restartButton" class="button hidden">Restart</button>
+            <button id="muteButton" class="button"><i class="fas fa-volume-up"></i> Mute</button>
+        </div>
+    </div>
+
+    <div id="videoModal" class="modal hidden">
+        <div class="video-container">
+            <video id="videoPlayer" src="eposholidays2025.mp4" playsinline></video>
+            <div id="videoPlayOverlay" class="video-overlay hidden">
+                <i class="fas fa-play text-white text-5xl"></i>
+            </div>
+        </div>
+    </div>
+
+    <div id="messageBox" class="modal hidden">
+        <div class="modal-content">
+            <h2 id="messageBoxTitle"></h2>
+            <p id="messageBoxContent"></p>
+            <table id="highScoresTable" class="high-scores-table hidden">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Score</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody id="highScoresBody">
+                </tbody>
+            </table>
+            <button id="messageBoxOkBtn" class="button modal-button">OK</button>
+        </div>
+    </div>
+
+    <audio id="backgroundMusic" src="epos2025music.mp3" loop preload="auto"></audio>
+
+    <script>
+        /**
+         * Standalone Breakout Game with Background Music and High Scores
+         *
+         * This script contains all the logic for a classic Breakout game,
+         * including paddle movement, puck physics, brick breaking, scoring,
+         * lives, background music, high scores, and rendering on an HTML canvas.
+         *
+         * @author Grok
+         * @version 1.0.5
+         * @date 2025-09-17
+         */
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Game Configuration ---
+            const CANVAS_WIDTH = 600;
+            const CANVAS_HEIGHT = 400;
+            const PADDLE_WIDTH = 100;
+            const PADDLE_HEIGHT = 20;
+            const PUCK_RADIUS = 15;
+            const PUCK_STYLE = 'square'; // 8-bit square puck
+            const PUCK_SIZE = 25; // Increased for visibility
+            const BRICK_ROWS = 5;
+            const BRICK_COLS = 10;
+            const BRICK_WIDTH = CANVAS_WIDTH / BRICK_COLS - 10;
+            const BRICK_HEIGHT = 30;
+            const BRICK_GAP = 10;
+            const COLORS = [
+                '#44ead6', '#ff5549', '#ffffff', '#33b8af', '#eeeff1'
+            ];
+
+            // --- DOM Element References ---
+            const gameCanvas = document.getElementById('gameCanvas');
+            const scoreDisplay = document.getElementById('scoreDisplay');
+            const livesDisplay = document.getElementById('livesDisplay');
+            const startButton = document.getElementById('startButton');
+            const pauseButton = document.getElementById('pauseButton');
+            const restartButton = document.getElementById('restartButton');
+            const muteButton = document.getElementById('muteButton');
+            const messageBox = document.getElementById('messageBox');
+            const messageBoxTitle = document.getElementById('messageBoxTitle');
+            const messageBoxContent = document.getElementById('messageBoxContent');
+            const highScoresTable = document.getElementById('highScoresTable');
+            const highScoresBody = document.getElementById('highScoresBody');
+            const messageBoxOkBtn = document.getElementById('messageBoxOkBtn');
+            const videoModal = document.getElementById('videoModal');
+            const videoPlayer = document.getElementById('videoPlayer');
+            const videoPlayOverlay = document.getElementById('videoPlayOverlay');
+            const backgroundMusic = document.getElementById('backgroundMusic');
+
+            let ctx;
+            try {
+                ctx = gameCanvas.getContext('2d');
+                console.log('Canvas context initialized successfully');
+            } catch (e) {
+                console.error('Failed to initialize canvas context:', e);
+                return;
+            }
+
+            // --- Game State Variables ---
+            let paddleX = (gameCanvas.width - PADDLE_WIDTH) / 2;
+            let puckX = gameCanvas.width / 2;
+            let puckY = gameCanvas.height - PADDLE_HEIGHT - PUCK_RADIUS - 10;
+            let puckDX = 4;
+            let puckDY = -4;
+            let bricks = [];
+            let score = 0;
+            let lives = 3;
+            let gameRunning = false;
+            let lastTime = 0;
+            let comboCount = 0;
+            let lastHitTime = 0;
+            const COMBO_WINDOW = 5000;
+            let isMuted = false;
+            let highScores = JSON.parse(localStorage.getItem('highScoresBlockBuster')) || [];
+
+            // --- Resize Handler ---
+            let resizeTimeout;
+            function updateCanvasSize() {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(() => {
+                    const rect = gameCanvas.getBoundingClientRect();
+                    gameCanvas.width = rect.width;
+                    gameCanvas.height = rect.height;
+                    console.log(`Canvas size updated: ${gameCanvas.width}x${gameCanvas.height}`);
+                    if (gameRunning) draw(); // Redraw on resize
+                }, 100);
+            }
+            window.addEventListener('resize', updateCanvasSize);
+            updateCanvasSize(); // Initial size sync
+
+            // --- Modal Functions ---
+            function showMessageBox(title, content, showHighScores = false) {
+                messageBoxTitle.textContent = title;
+                messageBoxContent.innerHTML = content;
+                messageBox.classList.remove('hidden');
+                highScoresTable.classList.toggle('hidden', !showHighScores);
+                console.log(`Message box shown: ${title}`);
+            }
+
+            // --- Game Logic Functions ---
+            function initializeGame() {
+                paddleX = (gameCanvas.width - PADDLE_WIDTH) / 2;
+                resetPuck();
+                bricks = Array(BRICK_ROWS).fill().map(() => Array(BRICK_COLS).fill().map(() => ({
+                    active: true,
+                    color: COLORS[Math.floor(Math.random() * COLORS.length)]
+                })));
+                score = 0;
+                lives = 3;
+                comboCount = 0;
+                scoreDisplay.textContent = score;
+                livesDisplay.textContent = lives;
+                startButton.classList.add('hidden');
+                pauseButton.classList.remove('hidden');
+                restartButton.classList.remove('hidden');
+                gameRunning = true;
+                if (!isMuted) {
+                    backgroundMusic.play().catch(e => console.log('Autoplay blocked:', e));
+                }
+                console.log('Game initialized');
+                setTimeout(() => draw(), 100); // Delayed draw to ensure canvas readiness
+                gameLoop();
+            }
+
+            function resetPuck() {
+                puckX = gameCanvas.width / 2;
+                puckY = gameCanvas.height - PADDLE_HEIGHT - PUCK_RADIUS - 10;
+                puckDX = 4;
+                puckDY = -4;
+                console.log(`Puck reset: x=${puckX}, y=${puckY}, dx=${puckDX}, dy=${puckDY}`);
+            }
+
+            function gameLoop(time = 0) {
+                if (!gameRunning) {
+                    console.log('Game loop stopped');
+                    return;
+                }
+                const deltaTime = time - lastTime;
+                lastTime = time;
+                console.log(`Game loop running, deltaTime: ${deltaTime}`);
+
+                update(deltaTime);
+                draw();
+                requestAnimationFrame(gameLoop);
+            }
+
+            function update(deltaTime) {
+                puckX += puckDX * (deltaTime / 16);
+                puckY += puckDY * (deltaTime / 16);
+                console.log(`Puck update: x=${puckX}, y=${puckY}, dx=${puckDX}, dy=${puckDY}`);
+
+                if (puckX + PUCK_SIZE / 2 > gameCanvas.width || puckX - PUCK_SIZE / 2 < 0) {
+                    puckDX = -puckDX;
+                    console.log('Puck hit wall');
+                }
+                if (puckY - PUCK_SIZE / 2 < 0) {
+                    puckDY = -puckDY;
+                    console.log('Puck hit ceiling');
+                }
+                if (puckY + PUCK_SIZE / 2 > gameCanvas.height) {
+                    lives--;
+                    livesDisplay.textContent = lives;
+                    console.log(`Life lost, remaining: ${lives}`);
+                    if (lives <= 0) {
+                        endGame();
+                        return;
+                    }
+                    resetPuck();
+                    comboCount = 0;
+                }
+
+                if (
+                    puckY + PUCK_SIZE / 2 > gameCanvas.height - PADDLE_HEIGHT &&
+                    puckX > paddleX &&
+                    puckX < paddleX + PADDLE_WIDTH
+                ) {
+                    puckDY = -puckDY;
+                    const hitPoint = (puckX - paddleX) / PADDLE_WIDTH;
+                    puckDX = 8 * (hitPoint - 0.5);
+                    console.log('Puck hit paddle');
+                }
+
+                let hitBrick = false;
+                for (let row = 0; row < BRICK_ROWS; row++) {
+                    for (let col = 0; col < BRICK_COLS; col++) {
+                        const brick = bricks[row][col];
+                        if (brick.active) {
+                            const brickX = col * (BRICK_WIDTH + BRICK_GAP);
+                            const brickY = row * (BRICK_HEIGHT + BRICK_GAP) + 50;
+                            if (
+                                puckX + PUCK_SIZE / 2 > brickX &&
+                                puckX - PUCK_SIZE / 2 < brickX + BRICK_WIDTH &&
+                                puckY + PUCK_SIZE / 2 > brickY &&
+                                puckY - PUCK_SIZE / 2 < brickY + BRICK_HEIGHT
+                            ) {
+                                brick.active = false;
+                                flashBrick(row, col);
+                                updateScore();
+                                hitBrick = true;
+                                puckDY = -puckDY;
+                                console.log(`Brick hit at row=${row}, col=${col}`);
+                            }
+                        }
+                    }
+                }
+                if (hitBrick) {
+                    const currentTime = Date.now();
+                    if (currentTime - lastHitTime < COMBO_WINDOW) comboCount++;
+                    else comboCount = 1;
+                    lastHitTime = currentTime;
+                    console.log(`Combo count: ${comboCount}`);
+                }
+
+                if (bricks.every(row => row.every(brick => !brick.active))) {
+                    endGame(true);
+                }
+            }
+
+            function flashBrick(row, col) {
+                const brickX = col * (BRICK_WIDTH + BRICK_GAP);
+                const brickY = row * (BRICK_HEIGHT + BRICK_GAP) + 50;
+                ctx.fillStyle = '#44ead6';
+                ctx.fillRect(brickX, brickY, BRICK_WIDTH, BRICK_HEIGHT);
+                gameCanvas.classList.add('flash-brick');
+                setTimeout(() => {
+                    gameCanvas.classList.remove('flash-brick');
+                    draw();
+                }, 300);
+            }
+
+            function updateScore() {
+                const basePoints = 100;
+                const multiplier = Math.min(comboCount, 5);
+                score += basePoints * multiplier;
+                scoreDisplay.textContent = score;
+                console.log(`Score updated: ${score}, multiplier: ${multiplier}`);
+            }
+
+            function updateHighScores() {
+                const date = new Date().toLocaleDateString();
+                highScores.push({ score, date });
+                highScores.sort((a, b) => b.score - a.score);
+                highScores = highScores.slice(0, 5);
+                localStorage.setItem('highScoresBlockBuster', JSON.stringify(highScores));
+                highScoresBody.innerHTML = '';
+                highScores.forEach((entry, index) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td>${index + 1}</td><td>${entry.score}</td><td>${entry.date}</td>`;
+                    highScoresBody.appendChild(row);
+                });
+                console.log('High scores updated:', highScores);
+            }
+
+            function pauseGame() {
+                gameRunning = false;
+                backgroundMusic.pause();
+                showMessageBox('Game Paused', 'Click OK or the Start button to resume.');
+                pauseButton.classList.add('hidden');
+                startButton.classList.remove('hidden');
+                highScoresTable.classList.add('hidden');
+                console.log('Game paused');
+            }
+
+            function endGame(won = false) {
+                gameRunning = false;
+                backgroundMusic.pause();
+                animateGameOver();
+                updateHighScores();
+                const message = won
+                    ? `You Win!<br>Your final score: ${score}<br>Max Combo: ${comboCount}x`
+                    : `Game Over!<br>Your final score: ${score}<br>Max Combo: ${comboCount}x`;
+                showMessageBox(won ? 'Victory!' : 'Game Over!', message, true);
+                startButton.classList.add('hidden');
+                pauseButton.classList.add('hidden');
+                restartButton.classList.remove('hidden');
+                console.log(won ? 'Game won' : 'Game over');
+            }
+
+            function animateGameOver() {
+                let opacity = 1;
+                const fadeInterval = setInterval(() => {
+                    ctx.globalAlpha = opacity;
+                    draw();
+                    opacity -= 0.1;
+                    if (opacity <= 0) {
+                        clearInterval(fadeInterval);
+                        ctx.globalAlpha = 1; // Reset alpha
+                        draw();
+                    }
+                }, 100);
+            }
+
+            function draw() {
+                if (!ctx) {
+                    console.error('Canvas context is null');
+                    return;
+                }
+                ctx.globalAlpha = 1; // Reset alpha to ensure visibility
+                ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+                console.log(`Canvas cleared: ${gameCanvas.width}x${gameCanvas.height}`);
+
+                ctx.fillStyle = '#33b8af';
+                ctx.fillRect(paddleX, gameCanvas.height - PADDLE_HEIGHT, PADDLE_WIDTH, PADDLE_HEIGHT);
+                ctx.strokeStyle = '#131313';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(paddleX, gameCanvas.height - PADDLE_HEIGHT, PADDLE_WIDTH, PADDLE_HEIGHT);
+                console.log(`Paddle drawn: x=${paddleX}, y=${gameCanvas.height - PADDLE_HEIGHT}`);
+
+                if (PUCK_STYLE === 'circle') {
+                    ctx.beginPath();
+                    ctx.arc(puckX, puckY, PUCK_RADIUS, 0, Math.PI * 2);
+                    ctx.fillStyle = '#ff5549';
+                    ctx.fill();
+                    ctx.strokeStyle = '#131313';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    ctx.closePath();
+                } else if (PUCK_STYLE === 'square') {
+                    ctx.fillStyle = '#ff5549';
+                    ctx.fillRect(puckX - PUCK_SIZE / 2, puckY - PUCK_SIZE / 2, PUCK_SIZE, PUCK_SIZE);
+                    ctx.strokeStyle = '#131313';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(puckX - PUCK_SIZE / 2, puckY - PUCK_SIZE / 2, PUCK_SIZE, PUCK_SIZE);
+                }
+                console.log(`Puck drawn: x=${puckX}, y=${puckY}, style=${PUCK_STYLE}, globalAlpha=${ctx.globalAlpha}`);
+
+                for (let row = 0; row < BRICK_ROWS; row++) {
+                    for (let col = 0; col < BRICK_COLS; col++) {
+                        if (bricks[row][col].active) {
+                            const brickX = col * (BRICK_WIDTH + BRICK_GAP);
+                            const brickY = row * (BRICK_HEIGHT + BRICK_GAP) + 50;
+                            ctx.fillStyle = bricks[row][col].color;
+                            ctx.fillRect(brickX, brickY, BRICK_WIDTH, BRICK_HEIGHT);
+                            ctx.strokeStyle = '#131313';
+                            ctx.lineWidth = 2;
+                            ctx.strokeRect(brickX, brickY, BRICK_WIDTH, BRICK_HEIGHT);
+                        }
+                    }
+                }
+            }
+
+            document.addEventListener('mousemove', e => {
+                if (!gameRunning) return;
+                const rect = gameCanvas.getBoundingClientRect();
+                const scaleX = gameCanvas.width / rect.width;
+                paddleX = Math.max(0, Math.min((e.clientX - rect.left) * scaleX - PADDLE_WIDTH / 2, gameCanvas.width - PADDLE_WIDTH));
+                console.log(`Paddle moved: x=${paddleX}`);
+                draw(); // Force redraw on mouse move
+            });
+
+            document.addEventListener('keydown', e => {
+                if (!gameRunning) return;
+                switch (e.key) {
+                    case 'ArrowLeft':
+                        paddleX = Math.max(0, paddleX - 10);
+                        console.log(`Paddle moved left: x=${paddleX}`);
+                        break;
+                    case 'ArrowRight':
+                        paddleX = Math.min(gameCanvas.width - PADDLE_WIDTH, paddleX + 10);
+                        console.log(`Paddle moved right: x=${paddleX}`);
+                        break;
+                }
+                draw(); // Force redraw on key press
+            });
+
+            startButton.addEventListener('click', () => {
+                if (gameRunning) {
+                    gameRunning = true;
+                    pauseButton.classList.remove('hidden');
+                    startButton.classList.add('hidden');
+                    messageBox.classList.add('hidden');
+                    highScoresTable.classList.add('hidden');
+                    lastTime = 0;
+                    if (!isMuted) backgroundMusic.play();
+                    gameLoop();
+                    console.log('Game resumed');
+                } else {
+                    initializeGame();
+                }
+            });
+
+            pauseButton.addEventListener('click', pauseGame);
+            restartButton.addEventListener('click', () => {
+                messageBox.classList.add('hidden');
+                highScoresTable.classList.add('hidden');
+                initializeGame();
+            });
+
+            messageBoxOkBtn.addEventListener('click', () => {
+                messageBox.classList.add('hidden');
+                highScoresTable.classList.add('hidden');
+                if (gameRunning) {
+                    lastTime = 0;
+                    if (!isMuted) backgroundMusic.play();
+                    gameLoop();
+                }
+                console.log('Message box closed');
+            });
+
+            muteButton.addEventListener('click', () => {
+                isMuted = !isMuted;
+                backgroundMusic.muted = isMuted;
+                muteButton.innerHTML = `<i class="fas fa-volume-${isMuted ? 'mute' : 'up'}"></i> ${isMuted ? 'Unmute' : 'Mute'}`;
+                console.log(`Mute toggled: ${isMuted ? 'muted' : 'unmuted'}`);
+            });
+
+            function showVideoIntro() {
+                videoModal.classList.remove('hidden');
+                videoPlayer.src = 'eposholidays2025.mp4';
+                videoPlayer.play().catch(e => {
+                    console.log('Video autoplay failed:', e);
+                    videoPlayOverlay.classList.remove('hidden');
+                });
+            }
+
+            function hideVideoIntro() {
+                videoPlayer.pause();
+                videoModal.classList.add('hidden');
+                setTimeout(() => {
+                    showMessageBox('Welcome to Arcade Block Buster!', 'Use the mouse or arrow keys to move the paddle. Break all bricks to win! Press Start to begin!');
+                }, 100);
+            }
+
+            videoPlayOverlay.addEventListener('click', () => {
+                videoPlayOverlay.classList.add('hidden');
+                videoPlayer.play();
+                console.log('Video play overlay clicked');
+            });
+
+            videoPlayer.onended = () => {
+                hideVideoIntro();
+                console.log('Video ended');
+            };
+
+            setTimeout(hideVideoIntro, 10500);
+            showVideoIntro();
+        });
+    </script>
+</body>
+</html>
