@@ -305,12 +305,12 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['role']) && $_SESSION['role']
                     <!-- Data Management -->
                     <div class="nav-item">
                         <a href="#dataSubmenu" class="nav-link" data-bs-toggle="collapse" 
-                           aria-expanded="<?= in_array(basename($_SERVER['PHP_SELF']), ['import.php', 'export.php', 'export_filter_simple.php', 'budget_manager.php', 'excel_api.php', 'vendor_manager.php', 'add_item.php', 'edit_item.php']) ? 'true' : 'false' ?>">
+                           aria-expanded="<?= in_array(basename($_SERVER['PHP_SELF']), ['import.php', 'budget_export.php', 'export_filter_simple.php', 'budget_manager.php', 'excel_api.php', 'vendor_manager.php', 'add_item.php', 'edit_item.php']) ? 'true' : 'false' ?>">
                             <span class="nav-icon"><i class="ti ti-database"></i></span>
                             <span class="nav-text">Data Management</span>
                             <span class="nav-arrow"><i class="ti ti-chevron-down"></i></span>
                         </a>
-                        <div class="collapse <?= in_array(basename($_SERVER['PHP_SELF']), ['import.php', 'export.php', 'export_filter_simple.php', 'budget_manager.php', 'excel_api.php', 'vendor_manager.php', 'add_item.php', 'edit_item.php']) ? 'show' : '' ?>" id="dataSubmenu">
+                        <div class="collapse <?= in_array(basename($_SERVER['PHP_SELF']), ['import.php', 'budget_export.php', 'export_filter_simple.php', 'budget_manager.php', 'excel_api.php', 'vendor_manager.php', 'add_item.php', 'edit_item.php']) ? 'show' : '' ?>" id="dataSubmenu">
                             <!-- Import Section -->
                             <div class="dropdown-header">Import</div>
                             <a href="import.php" class="dropdown-item <?= basename($_SERVER['PHP_SELF']) == 'import.php' ? 'current-page' : '' ?>">
@@ -319,7 +319,7 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['role']) && $_SESSION['role']
                             
                             <!-- Export Section -->
                             <div class="dropdown-header">Export</div>
-                            <a href="export.php" class="dropdown-item <?= basename($_SERVER['PHP_SELF']) == 'export.php' ? 'current-page' : '' ?>">
+                            <a href="budget_export.php" class="dropdown-item <?= basename($_SERVER['PHP_SELF']) == 'budget_export.php' ? 'current-page' : '' ?>">
                                 <i class="ti ti-download"></i> Full Export
                             </a>
                             <a href="export_filter_simple.php" class="dropdown-item <?= basename($_SERVER['PHP_SELF']) == 'export_filter_simple.php' ? 'current-page' : '' ?>">

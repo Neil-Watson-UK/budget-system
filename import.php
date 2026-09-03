@@ -628,7 +628,7 @@ error_log("Message: " . $message);
             
             <!-- Action Buttons -->
             <div class="text-center mt-5">
-                <a href="csvclean.php?new=1" class="btn btn-primary me-3">
+                <a href="import.php" class="btn btn-primary me-3">
                     <i class="ti ti-upload me-2"></i> Import Another File
                 </a>
                 <a href="index.php" class="btn btn-outline-primary">
