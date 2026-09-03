@@ -1,0 +1,5 @@
+report_date,distributor_name,distributor_account_code,reseller_name,country,sku,product_name,quantity,total_value,currency,invoice_number,transaction_type
+2026-03-01,ExampleDist,ACC1001,ACME IT Ltd,GB,1000634,EPOS ADAPT 260,10,1250.00,GBP,INV-10001,SALE
+2026-03-01,ExampleDist,ACC1002,Best Office Supplies,GB,1000789,EPOS EXPAND Vision 3,3,2100.00,GBP,INV-10002,SALE
+2026-03-02,ExampleDist,ACC1001,ACME IT Ltd,GB,1000634,EPOS ADAPT 260,-1,-125.00,GBP,CR-10003,RETURN
+2026-03-02,ExampleDist,ACC1003,Global Tech BV,NL,1000912,EPOS IMPACT 1061,5,1750.00,EUR,INV-10004,SALE

@@ -1,0 +1,4 @@
+snapshot_date,distributor_name,sku,sku_description,on_hand_qty,unit_cost,inventory_value,currency,warehouse
+2026-03-01,ExampleDist,1000634,EPOS ADAPT 260,120,95.00,11400.00,GBP,MAIN
+2026-03-01,ExampleDist,1000789,EPOS EXPAND Vision 3,35,520.00,18200.00,GBP,MAIN
+2026-03-01,ExampleDist,1000912,EPOS IMPACT 1061,60,310.00,18600.00,EUR,EU-WH1

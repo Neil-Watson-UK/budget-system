@@ -1,0 +1,248 @@
+/*
+Theme Name: EPOS
+Theme URI: https://www.eposaudio.com/
+Description: EPOS brand styling as a child of Kadence — aligned with Lenovo calc / landing shell (petrol, mint accent, EPOS BASIS, square UI).
+Author: EPOS
+Template: kadence
+Version: 1.0.1
+Requires at least: 6.0
+Tested up to: 6.8
+Requires PHP: 7.4
+License: GNU General Public License v3.0
+License URI: https://www.gnu.org/licenses/gpl-3.0.html
+Text Domain: epos
+*/
+
+/* EPOS BASIS — same sources as lenovocalc/landing-shell.css */
+@font-face {
+  font-family: "EPOS BASIS";
+  src:
+    url("https://storage.googleapis.com/cdn-font/epos/eposbasis-regular.woff2") format("woff2"),
+    url("https://storage.googleapis.com/cdn-font/epos/eposbasis-regular.woff") format("woff"),
+    url("https://storage.googleapis.com/cdn-font/epos/eposbasis-regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "EPOS BASIS Light";
+  src:
+    url("https://storage.googleapis.com/cdn-font/epos/eposbasis-light.woff2") format("woff2"),
+    url("https://storage.googleapis.com/cdn-font/epos/eposbasis-light.woff") format("woff"),
+    url("https://storage.googleapis.com/cdn-font/epos/eposbasis-light.ttf") format("truetype");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "EPOS BASIS Medium";
+  src:
+    url("https://storage.googleapis.com/cdn-font/epos/eposbasis-medium.woff2") format("woff2"),
+    url("https://storage.googleapis.com/cdn-font/epos/eposbasis-medium.woff") format("woff"),
+    url("https://storage.googleapis.com/cdn-font/epos/eposbasis-medium.ttf") format("truetype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+/*
+ * Kadence maps palette1–palette9 across the design system.
+ * EPOS: mint highlight (CTAs), petrol as secondary / structure, light gray canvas.
+ */
+:root {
+  --global-palette1: #44ead6;
+  --global-palette2: #00353d;
+  --global-palette3: #111827;
+  --global-palette4: #374151;
+  --global-palette5: #6b7280;
+  --global-palette6: #e5e7eb;
+  --global-palette7: #f3f4f7;
+  --global-palette8: #ffffff;
+  --global-palette9: #ffffff;
+  --global-body-font-family: "EPOS BASIS", inter, system-ui, sans-serif;
+  --global-heading-font-family: "EPOS BASIS Light", "EPOS BASIS", sans-serif;
+  --global-primary-nav-font-family: "EPOS BASIS", inter, system-ui, sans-serif;
+}
+
+body {
+  background: var(--global-palette7);
+}
+
+/*
+ * Elementor (and other page builders) often put logo/title/hero in page content, while Kadence
+ * `#masthead` sits above the layout with transparent/fixed positioning — so the nav & wp-admin
+ * bar will visually cross the hero. Fix in Customizer (disable transparent header / enable
+ * content padding) or add top padding to the hero in Elementor. Keep admin bar above our mega UI.
+ */
+#wpadminbar {
+  z-index: 100000 !important;
+}
+
+/* Square corners (landing shell) */
+.wp-block-button__link,
+button,
+.button,
+input[type="button"],
+input[type="reset"],
+input[type="submit"],
+.kb-button .kb-button-link {
+  border-radius: 0;
+}
+
+/* Primary actions: mint fill, petrol text — matches .lp-btn-primary */
+.wp-block-button__link:not(.has-text-color):not(.is-style-outline),
+.button.button-primary {
+  background: var(--global-palette1);
+  color: var(--global-palette2);
+}
+.wp-block-button__link:not(.has-text-color):not(.is-style-outline):hover,
+.button.button-primary:hover {
+  background: #2dd4bf;
+  color: var(--global-palette2);
+}
+
+/* Outline / secondary — .lp-btn-secondary */
+.wp-block-button__link.is-style-outline,
+.button.button-secondary-outlined,
+.button.button-secondary {
+  border-color: var(--global-palette2);
+  color: var(--global-palette2);
+  background: transparent;
+}
+
+a:hover,
+.site-container a:hover {
+  color: var(--global-palette1);
+}
+
+.entry-title,
+h1,
+h2,
+h3,
+h4 {
+  color: var(--global-palette3);
+}
+
+/*
+ * Mega-style primary dropdowns (eposaudio.com–inspired) — desktop only.
+ * Menu structure: top-level "Products" with children = column parents (Headsets, Tools…),
+ * each with nested links. Add CSS classes on items in Appearance → Menus (enable under Screen options):
+ *   epos-mega — on top-level parent → Kadence mega columns (also adds kadence-menu-mega-enabled).
+ *   epos-col-heading — optional extra column title styling.
+ * Requires :has() (current Chrome / Edge / Safari / Firefox).
+ */
+.epos-nav-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 998;
+  background: rgba(17, 24, 39, 0.42);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+@media (min-width: 1025px) {
+  body:has(#site-navigation li.kadence-menu-mega-enabled.menu-item-has-children:hover) .epos-nav-overlay,
+  body:has(#site-navigation li.kadence-menu-mega-enabled.menu-item-has-children:focus-within) .epos-nav-overlay {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Full-width mega panel under header (use "epos-mega" class on top-level item, or add kadence-menu-mega-enabled manually) */
+  #site-navigation.main-navigation .primary-menu-container > ul.menu > li.kadence-menu-mega-enabled.menu-item-has-children > ul.sub-menu {
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: var(--epos-mega-top, 88px);
+    width: 100vw;
+    max-width: none;
+    margin: 0;
+    padding: 2.25rem clamp(1.25rem, 4vw, 3rem) 2.75rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 2rem 3rem;
+    border-radius: 0;
+    border-top: 1px solid var(--global-palette6);
+    box-shadow: 0 28px 60px rgba(0, 0, 0, 0.14);
+    z-index: 999;
+    background: #fff;
+    max-height: calc(100vh - var(--epos-mega-top, 88px));
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  /* Kadence mega: each direct child of dropdown is one column */
+  #site-navigation.main-navigation .primary-menu-container > ul > li.kadence-menu-mega-enabled > ul.sub-menu > li {
+    flex: 1 1 12rem;
+    max-width: 22rem;
+    margin: 0;
+    border: 0;
+    border-bottom: none !important;
+    list-style: none;
+  }
+
+  #site-navigation.main-navigation .primary-menu-container > ul > li.kadence-menu-mega-enabled > ul.sub-menu > li > a {
+    width: auto !important;
+    max-width: none;
+  }
+
+  /* Nested links stack in the column (mega only) */
+  #site-navigation.main-navigation li.kadence-menu-mega-enabled ul.sub-menu ul.sub-menu {
+    position: static;
+    display: block;
+    opacity: 1 !important;
+    visibility: visible !important;
+    clip: auto !important;
+    height: auto !important;
+    width: 100% !important;
+    max-width: none;
+    min-width: 0;
+    margin: 0;
+    padding: 0.35rem 0 0;
+    background: transparent !important;
+    border: 0;
+    box-shadow: none !important;
+    transform: none !important;
+  }
+
+  #site-navigation.main-navigation li.kadence-menu-mega-enabled ul.sub-menu ul.sub-menu li {
+    border: 0 !important;
+  }
+
+  #site-navigation.main-navigation li.kadence-menu-mega-enabled ul.sub-menu ul.sub-menu a {
+    padding: 0.4rem 0 !important;
+    font-size: 0.9375rem;
+    font-weight: 400;
+  }
+
+  /* Column titles: mega column parents, or any item with class epos-col-heading */
+  #site-navigation.main-navigation li.kadence-menu-mega-enabled > ul.sub-menu > li.menu-item-has-children > a,
+  #site-navigation.main-navigation li.epos-col-heading > a {
+    font-family: var(--global-heading-font-family);
+    font-size: 0.72rem !important;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--global-palette2) !important;
+    padding: 0 0 0.65rem !important;
+    margin-bottom: 0.25rem;
+    background: transparent !important;
+  }
+
+  #site-navigation.main-navigation .primary-menu-container > ul > li.menu-item-has-children > a .dropdown-nav-toggle {
+    opacity: 0.55;
+  }
+
+  /* Top-level: stronger underline cue toward epos (Customizer "underline" style compatible) */
+  .header-navigation.header-navigation-style-underline .primary-menu-container > ul > li.menu-item-has-children:hover > a::after,
+  .header-navigation.header-navigation-style-underline .primary-menu-container > ul > li.menu-item-has-children > a:focus::after {
+    background: var(--global-palette1);
+  }
+}
+
+@media (max-width: 1024px) {
+  .epos-nav-overlay {
+    display: none;
+  }
+}

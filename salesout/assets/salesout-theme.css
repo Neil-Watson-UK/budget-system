@@ -1,0 +1,121 @@
+/**
+ * Sales Out - EPOS theme
+ * EPOS colours: Dark Petrol #00353d, Mint #00a399, Coral #ff5549
+ */
+:root {
+  --salesout-primary: #00a399;
+  --salesout-primary-hover: #008c83;
+  --salesout-primary-muted: rgba(0, 163, 153, 0.08);
+  --salesout-dark: #00353d;
+  --salesout-coral: #ff5549;
+  --salesout-surface: rgb(238, 239, 241);
+  --salesout-surface-elevated: #ffffff;
+  --salesout-border: #D7D2CB;
+  --salesout-border-light: #eeeeee;
+  --salesout-text: #000000;
+  --salesout-text-muted: #666666;
+  --salesout-text-subtle: #cccccc;
+  --salesout-success: #00a399;
+  --salesout-warning: #f59e0b;
+  --salesout-danger: #ff5549;
+  --salesout-radius: 10px;
+  --salesout-radius-sm: 6px;
+  --salesout-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  --salesout-shadow-lg: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.05);
+}
+
+/* Header & Mega Nav - Tabler-inspired dark navbar */
+.salesout-navbar {
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%) !important;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.salesout-navbar.navbar-dark .navbar-brand {
+  font-weight: 600;
+  color: #fff !important;
+}
+.salesout-navbar.navbar-dark .nav-link {
+  color: rgba(255,255,255,0.85) !important;
+  font-weight: 500;
+  padding: 0.5rem 0.75rem !important;
+}
+.salesout-navbar.navbar-dark .nav-link:hover {
+  color: #fff !important;
+}
+.salesout-navbar .navbar-toggler {
+  border-color: rgba(255,255,255,0.3);
+}
+.salesout-navbar .navbar-toggler-icon {
+  filter: invert(1);
+}
+.salesout-navbar .dropdown-toggle::after { margin-left: 0.35em; }
+.salesout-megadrop {
+  min-width: 220px;
+  padding: 0.5rem 0;
+  border: 1px solid var(--salesout-border);
+  border-radius: var(--salesout-radius-sm);
+  box-shadow: var(--salesout-shadow-lg);
+}
+.salesout-megadrop a {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  color: var(--salesout-text);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+.salesout-megadrop a:hover {
+  background: var(--salesout-primary-muted);
+  color: var(--salesout-primary);
+}
+.salesout-megadrop a i { margin-right: 0.5rem; opacity: 0.7; }
+.salesout-megadrop a:hover i { opacity: 1; }
+
+/* Page headers - sleek gradient */
+.salesout-page-header {
+  background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 50%, #0ea5e9 100%);
+  color: white;
+  padding: 1.75rem 0;
+  margin-bottom: 1.5rem;
+  border-radius: var(--salesout-radius);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25);
+}
+.salesout-page-header-sm {
+  padding: 1.25rem 0;
+}
+
+/* Cards & surfaces */
+.salesout-card {
+  background: var(--salesout-surface-elevated);
+  border: 1px solid var(--salesout-border);
+  border-radius: var(--salesout-radius);
+  box-shadow: var(--salesout-shadow);
+}
+.salesout-card-header {
+  background: var(--salesout-surface);
+  border-bottom: 1px solid var(--salesout-border);
+  padding: 1rem 1.25rem;
+  font-weight: 600;
+  color: var(--salesout-text);
+  border-radius: var(--salesout-radius) var(--salesout-radius) 0 0;
+}
+.salesout-kpi-card {
+  background: var(--salesout-surface-elevated);
+  border: 1px solid var(--salesout-border);
+  border-radius: var(--salesout-radius);
+  box-shadow: var(--salesout-shadow);
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+.salesout-kpi-card:hover {
+  box-shadow: var(--salesout-shadow-lg);
+  transform: translateY(-1px);
+}
+.salesout-filter-card {
+  background: var(--salesout-surface-elevated);
+  border: 1px solid var(--salesout-border);
+  border-radius: var(--salesout-radius);
+  box-shadow: var(--salesout-shadow);
+}
+
+/* Body background */
+.salesout-body { background: var(--salesout-surface); }

@@ -1,0 +1,37 @@
+# Configuration — copy config.example.php to config.php
+config.php
+salesout/config.php
+.env
+.env.*
+!.env.example
+
+# Composer
+/vendor/
+composer.phar
+*.phar
+
+# Logs, dumps, generated
+error_log
+*.log
+/Powerpoint/
+vendors_export.csv
+
+# Tabler kit source (app uses CDN)
+/assets/core/
+
+# Not part of this repo
+/quest/
+/Powerpoint/
+lenovocalc/
+
+# Uploads (keep .htaccess)
+/uploads/**
+!/uploads/**/.htaccess
+
+# OS and editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+budget.code-workspace
